@@ -2,3 +2,10 @@ tmp*
 __pycache__*
 .vscode*
 test*
+.DS_Store
+__pycache__/
+*.py[cod]
+zijun/method_development/outputs/.cache/
+zijun/method_development/outputs/.matplotlib/
+zijun/method_development/outputs/*_predictions.csv
+zijun/method_development/baseline_results/*_predictions.csv
