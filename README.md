@@ -92,3 +92,80 @@ tqdm
 scikit-learn
 pandas
 ```
+
+## 复现实验运行说明
+
+### Momentum reproduction
+
+运行 learning-rate momentum：
+
+```bash
+python code/reproduction_momentum.py
+```
+
+默认会读取：
+
+```text
+loss curves/gpt_loss+lrs.pkl
+```
+
+并将结果输出到：
+
+```text
+results/reproduction/momentum/
+```
+
+主要输出文件包括：
+
+```text
+results/reproduction/momentum/summary.json
+results/reproduction/momentum/metrics.csv
+results/reproduction/momentum/predictions.csv
+results/reproduction/momentum/momentum_fit_prediction.png
+```
+
+### Multi-Power Law reproduction
+
+运行 `A multi-power law for loss curve prediction across learning rate schedules` 的复现实验：
+
+```bash
+python code/reproduction_multi-power_law/main.py --device cuda
+```
+
+默认设置为：
+
+- 读取 `loss curves/gpt_loss+lrs.pkl`
+- 在 `cosine` loss curve 上拟合 Multi-Power Law 参数
+- 在 `cosine` 和 `wsd` loss curve 上评估
+- 读取 `results/reproduction/momentum/summary.json`，并在输出中给出和 momentum baseline 的指标对比
+
+结果会输出到：
+
+```text
+results/reproduction/multi_power_law/
+```
+
+主要输出文件包括：
+
+```text
+results/reproduction/multi_power_law/summary.json
+results/reproduction/multi_power_law/metrics.csv
+results/reproduction/multi_power_law/predictions.csv
+results/reproduction/multi_power_law/training_history.csv
+results/reproduction/multi_power_law/mpl_fit_prediction.png
+results/reproduction/multi_power_law/loss_monitor.png
+```
+
+如果希望避免覆盖已有结果，可以指定新的输出目录：
+
+```bash
+python code/reproduction_multi-power_law/main.py \
+  --device cuda \
+  --output-dir results/reproduction/multi_power_law_test
+```
+
+如果没有可用 GPU，也可以使用 CPU 运行：
+
+```bash
+python code/reproduction_multi-power_law/main.py --device cpu
+```
