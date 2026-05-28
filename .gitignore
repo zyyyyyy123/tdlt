@@ -3,6 +3,7 @@ __pycache__*
 .vscode*
 test*
 results/*/*/metrics.csv
+results/*/*/predictions.csv
 
 .DS_Store
 __pycache__/
