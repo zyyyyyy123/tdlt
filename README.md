@@ -6,19 +6,44 @@
 
 ```text
 .
+├── .gitignore
 ├── final.pdf
 ├── README.md
 ├── code/
 │   ├── requirements.txt
 │   ├── momentum.py
 │   ├── reproduction_momentum.py
+│   ├── reproduction_multi-power_law/
+│   │   ├── check.py
+│   │   └── main.py
 │   └── MultiPowerLaw/
+│       ├── main.py
+│       ├── requirements.txt
+│       ├── src/
+│       ├── tests/
+│       └── optimized_schedules/
 ├── zijun/
 │   └── method_development/
 ├── loss curves/
 │   ├── gpt_loss+lrs.pkl
+│   ├── gpt_loss+lrs.csv
 │   ├── gpt_loss_lrs_all_runs.xlsx
+│   ├── pkl_to_csv.py
 │   └── Readme.txt
+├── results/
+│   └── reproduction/
+│       ├── momentum/
+│       │   ├── summary.json
+│       │   ├── metrics.csv
+│       │   ├── predictions.csv
+│       │   └── momentum_fit_prediction.png
+│       └── multi_power_law/
+│           ├── summary.json
+│           ├── metrics.csv
+│           ├── predictions.csv
+│           ├── training_history.csv
+│           ├── mpl_fit_prediction.png
+│           └── loss_monitor.png
 └── reference/
     ├── A multi-power law for loss curve prediction across learning rate schedules.pdf
     ├── Configuration-to-Performance Scaling Law with Neural Ansatz.pdf
@@ -41,7 +66,10 @@
 包含作业给定的 loss curve 数据和辅助查看脚本。
 
 - `gpt_loss+lrs.pkl`：原始数据文件，使用 `pandas.read_pickle()` 读取。
+- `gpt_loss+lrs.csv`：由 `gpt_loss+lrs.pkl` 转换得到的 CSV 文件，便于用表格工具或文本工具快速检查。
 - `gpt_loss_lrs_all_runs.xlsx`：已转换出的表格版本，便于直接查看。
+- `pkl_to_csv.py`：将 `gpt_loss+lrs.pkl` 转换为 `gpt_loss+lrs.csv` 的辅助脚本。
+- `Readme.txt`：原始数据目录中的说明文件。
 
 `gpt_loss+lrs.pkl` 顶层是一个 `dict`，包含 3 条训练曲线。每条曲线是一个 `DataFrame`，列为：
 
@@ -66,6 +94,7 @@ M:100M_gpt_D:20B_scheduler:cosine_rope
 - `requirements.txt`：当前代码需要的 Python 依赖。
 - `momentum.py`：参考 `Scaling law with learning rate` 的基础实现代码，当前主要作为参考代码保留。
 - `MultiPowerLaw/`：参考 `A multi-power law for loss curve prediction across learning rate schedules` 的实现代码和结果文件。
+- `reproduction_multi-power_law/`: 论文 `A multi-power law for loss curve prediction across learning rate schedules` 的复现代码。
 
 ### `zijun/method_development/`
 
