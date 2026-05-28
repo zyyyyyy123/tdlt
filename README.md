@@ -11,7 +11,10 @@
 ├── code/
 │   ├── requirements.txt
 │   ├── momentum.py
+│   ├── reproduction_momentum.py
 │   └── MultiPowerLaw/
+├── zijun/
+│   └── method_development/
 ├── loss curves/
 │   ├── gpt_loss+lrs.pkl
 │   ├── gpt_loss_lrs_all_runs.xlsx
@@ -64,6 +67,10 @@ M:100M_gpt_D:20B_scheduler:cosine_rope
 - `momentum.py`：参考 `Scaling law with learning rate` 的基础实现代码，当前主要作为参考代码保留。
 - `MultiPowerLaw/`：参考 `A multi-power law for loss curve prediction across learning rate schedules` 的实现代码和结果文件。
 
+### `zijun/method_development/`
+
+邓子钧的个人方法开发目录。该目录默认假设两个 baseline 复现结果已经完成，后续主要放新的 fitting / prediction 方法、实验入口、对比指标和图表。
+
 ## 环境配置
 
 建议使用 conda 创建独立环境：
@@ -85,4 +92,3 @@ tqdm
 scikit-learn
 pandas
 ```
-
