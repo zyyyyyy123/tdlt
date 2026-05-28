@@ -1,16 +1,29 @@
 # Baseline Results
 
-Put reproduced baseline summaries here. Suggested files:
+The shared repository now contains the reproduced momentum-law baseline in:
 
 ```text
-tissue_momentum_summary.csv
-multi_power_law_summary.csv
+results/reproduction/momentum/
 ```
 
-Each summary should use the same evaluation split as the new method:
+Current files:
 
-- fit on cosine
-- predict WSD
-- optionally evaluate 8-1-1
+```text
+metrics.csv
+predictions.csv
+summary.json
+momentum_fit_prediction.png
+momentum_s1_s2.png
+```
 
-Use consistent metric names: `mae`, `rmse`, `mape`, and `r2`.
+For new residual experiments, prefer reading
+`results/reproduction/momentum/predictions.csv` directly instead of copying it
+here. The normalized loader is:
+
+```text
+zijun/method_development/src/baseline_io.py
+```
+
+This local `baseline_results/` folder should only contain small summaries or
+parameters specific to Zijun's experiments. Large copied prediction tables should
+remain ignored.

@@ -67,6 +67,55 @@ zijun/method_development/outputs/feature_fit_predictions.csv
 zijun/method_development/figures/feature_fit_predictions.png
 ```
 
+## Current Main Method
+
+The current main method uses the reproduced momentum baseline from:
+
+```text
+results/reproduction/momentum/predictions.csv
+```
+
+Run:
+
+```bash
+python zijun/method_development/scripts/run_momentum_residual_spline.py
+```
+
+It fits a smooth residual spline on cosine sampled points:
+
+```text
+residual = log(loss) - log(momentum_prediction)
+```
+
+and transfers the residual curve to WSD. Outputs:
+
+```text
+zijun/method_development/outputs/momentum_residual_spline_metrics.csv
+zijun/method_development/outputs/key_momentum_residual_predictions.csv
+zijun/method_development/figures/momentum_residual_spline_full.png
+zijun/method_development/figures/momentum_residual_spline_20000_30000.png
+```
+
+Current WSD result on sampled evaluation points:
+
+```text
+baseline momentum:      MAE 0.037216, RMSE 0.046672, R2 0.928180
+spline residual method: MAE 0.020657, RMSE 0.024735, R2 0.979827
+```
+
+Current WSD `20000-30000` window:
+
+```text
+baseline momentum:      MAE 0.042608, RMSE 0.052675
+spline residual method: MAE 0.035471, RMSE 0.036293
+```
+
+Experiment notes are maintained in:
+
+```text
+zijun/method_development/EXPERIMENT_LOG.md
+```
+
 ## Method Ideas To Explore
 
 - Add schedule-aware features motivated by the momentum-law baseline.
