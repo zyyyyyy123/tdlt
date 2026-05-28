@@ -47,6 +47,15 @@ class Curve:
     s2: np.ndarray
 
 
+@dataclass
+class FitResult:
+    sample_end: int
+    sample_steps: np.ndarray
+    params: np.ndarray
+    objective_value: float
+    metrics: pd.DataFrame
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Fit and evaluate the LR-annealing momentum scaling law."
@@ -81,9 +90,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--sample-end",
-        type=int,
         default=None,
-        help="Last sampled step, inclusive. Default: maximum common step across fit/eval curves.",
+        help=(
+            "Last sampled step(s), inclusive. Use a single value like 20000 or "
+            "comma-separated values like 10000,20000,30000. Default: maximum "
+            "common step across fit/eval curves."
+        ),
     )
     parser.add_argument(
         "--sample-interval",
@@ -179,6 +191,29 @@ def split_aliases(value: str) -> list[str]:
     if unknown:
         raise ValueError(f"Unknown run aliases: {unknown}. Available: {sorted(RUN_ALIASES)}")
     return aliases
+
+
+def parse_sample_ends(value: str | None) -> list[int] | None:
+    if value is None:
+        return None
+
+    sample_ends = []
+    for item in value.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        try:
+            sample_ends.append(int(item))
+        except ValueError as exc:
+            raise ValueError(f"Invalid sample_end value: {item!r}") from exc
+
+    if not sample_ends:
+        raise ValueError("--sample-end must contain at least one integer when provided")
+
+    deduped = sorted(set(sample_ends))
+    if len(deduped) != len(sample_ends):
+        print(f"Duplicate sample_end values ignored: {sample_ends}")
+    return deduped
 
 
 def huber_loss(residual: np.ndarray, delta: float) -> np.ndarray:
@@ -353,6 +388,8 @@ def regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, floa
     mask = np.isfinite(y_true) & np.isfinite(y_pred)
     y_true = y_true[mask]
     y_pred = y_pred[mask]
+    if y_true.size == 0:
+        raise ValueError("No valid points available for metric computation.")
     residual = y_pred - y_true
     mae = float(np.mean(np.abs(residual)))
     mse = float(np.mean(residual**2))
@@ -377,8 +414,10 @@ def regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, floa
 def evaluate(
     curves: dict[str, Curve],
     aliases: list[str],
+    fit_aliases: list[str],
     params: np.ndarray,
     sample_steps: np.ndarray,
+    sample_end: int,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     metric_rows = []
     prediction_frames = []
@@ -386,15 +425,36 @@ def evaluate(
     for alias in aliases:
         curve = curves[alias]
         pred_full = predict_loss(params, curve.s1, curve.s2)
-        idx = sampled_indices(curve, sample_steps)
-        pred_sample = pred_full[idx]
+        is_fit_run = alias in fit_aliases
+        sampled_idx = sampled_indices(curve, sample_steps)
+        if is_fit_run:
+            eval_idx = np.where(curve.step > sample_end)[0]
+            eval_scope = "unseen_after_sample_end"
+            if eval_idx.size == 0:
+                raise ValueError(
+                    f"Run {curve.alias!r} has no unseen evaluation points after sample_end={sample_end}."
+                )
+        else:
+            eval_idx = sampled_idx
+            eval_scope = "sampled_steps_cross_run"
 
-        metrics = regression_metrics(curve.loss[idx], pred_sample)
+        metrics = regression_metrics(curve.loss[eval_idx], pred_full[eval_idx])
+        is_metric_eval = np.zeros_like(curve.step, dtype=bool)
+        is_metric_eval[eval_idx] = True
         metric_rows.append(
             {
+                "sample_end": sample_end,
                 "run": alias,
                 "full_run_name": curve.run_name,
-                "n_points": len(idx),
+                "eval_scope": eval_scope,
+                "n_train_points": len(sampled_idx) if is_fit_run else 0,
+                "n_eval_points": len(eval_idx),
+                "eval_step_start": int(curve.step[eval_idx[0]]),
+                "eval_step_end": int(curve.step[eval_idx[-1]]),
+                "L0": float(params[0]),
+                "A": float(params[1]),
+                "C": float(params[2]),
+                "alpha": float(params[3]),
                 **metrics,
             }
         )
@@ -402,12 +462,16 @@ def evaluate(
         prediction_frames.append(
             pd.DataFrame(
                 {
+                    "sample_end": sample_end,
                     "run": alias,
                     "step": curve.step,
                     "lr": curve.lr,
                     "loss": curve.loss,
                     "prediction": pred_full,
                     "is_sampled": np.isin(curve.step, sample_steps),
+                    "is_fit_run": is_fit_run,
+                    "is_metric_eval": is_metric_eval,
+                    "is_unseen_eval": is_fit_run & (curve.step > sample_end),
                     "s1": curve.s1,
                     "s2": curve.s2,
                 }
@@ -421,23 +485,22 @@ def save_figures(
     curves: dict[str, Curve],
     eval_aliases: list[str],
     fit_aliases: list[str],
-    params: np.ndarray,
+    fit_results: list[FitResult],
     output_dir: Path,
-    sample_steps: np.ndarray,
     plot_stride: int,
     ema_span: int,
 ) -> None:
     plot_stride = max(1, plot_stride)
     ema_span = max(1, ema_span)
     colors = {"cosine": "C0", "wsd": "C1", "811": "C2"}
+    linestyles = ["--", "-.", ":", (0, (5, 2, 1, 2)), (0, (3, 1, 1, 1))]
+    min_sample_start = min(int(result.sample_steps[0]) for result in fit_results)
 
     fig, axes = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
     for alias in eval_aliases:
         curve = curves[alias]
         full_plot_idx = np.arange(0, len(curve.step), plot_stride)
-        loss_plot_idx = full_plot_idx[curve.step[full_plot_idx] >= sample_steps[0]]
-        sample_idx = sampled_indices(curve, sample_steps)
-        pred = predict_loss(params, curve.s1, curve.s2)
+        loss_plot_idx = full_plot_idx[curve.step[full_plot_idx] >= min_sample_start]
         ema_loss = exponential_moving_average(curve.loss, ema_span)
         label_suffix = "fit" if alias in fit_aliases else "eval"
         color = colors.get(alias, None)
@@ -451,36 +514,49 @@ def save_figures(
             color=color,
             label=f"{alias} raw loss",
         )
-        # axes[0].plot(`
+        # axes[0].plot(
         #     curve.step[loss_plot_idx],
         #     ema_loss[loss_plot_idx],
         #     linestyle="-",
         #     linewidth=1.8,
-        #     alpha=1.0,
+        #     alpha=0.9,
         #     color=color,
         #     label=f"{alias} EMA loss (span={ema_span})",
-        # )`
-        # axes[0].scatter(
-        #     curve.step[sample_idx],
-        #     curve.loss[sample_idx],
-        #     s=12,
-        #     alpha=0.8,
-        #     color=color,
-        #     label=f"{alias} sampled loss ({label_suffix})",
         # )
-        axes[0].plot(
-            curve.step[loss_plot_idx],
-            pred[loss_plot_idx],
-            linestyle="--",
-            linewidth=2.0,
-            color=color,
-            label=f"{alias} prediction",
-        )
+        for i, result in enumerate(fit_results):
+            pred = predict_loss(result.params, curve.s1, curve.s2)
+            sample_idx = sampled_indices(curve, result.sample_steps)
+            # axes[0].scatter(
+            #     curve.step[sample_idx],
+            #     curve.loss[sample_idx],
+            #     s=8,
+            #     alpha=0.18,
+            #     color=color,
+            #     label="_nolegend_",
+            # )
+            axes[0].plot(
+                curve.step[loss_plot_idx],
+                pred[loss_plot_idx],
+                linestyle=linestyles[i % len(linestyles)],
+                linewidth=1.8,
+                alpha=0.95,
+                color=color,
+                label=f"{alias} prediction (end={result.sample_end})",
+            )
+            # if alias == eval_aliases[0]:
+            #     axes[0].axvline(
+            #         result.sample_end,
+            #         linestyle=linestyles[i % len(linestyles)],
+            #         linewidth=0.9,
+            #         alpha=0.35,
+            #         color="0.25",
+            #         label=f"sample_end={result.sample_end}",
+            #     )
         axes[1].plot(curve.step[full_plot_idx], curve.lr[full_plot_idx], linewidth=1.5, color=color, label=alias)
 
-    l0, a, c, alpha = params
+    sample_end_text = ", ".join(str(result.sample_end) for result in fit_results)
     axes[0].set_title(
-        f"Momentum law: L = {l0:.4g} + {a:.4g} * S1^(-{alpha:.4g}) - {c:.4g} * S2"
+        f"Momentum-law predictions fitted with sample_end = {sample_end_text}"
     )
     axes[0].set_ylabel("Loss")
     axes[0].set_xlim(0, None)
@@ -538,63 +614,96 @@ def main() -> None:
         aliases=all_aliases,
         decay_factor=args.decay_factor,
     )
-    sample_end = (
-        infer_sample_end(curves, all_aliases, args.sample_start, args.sample_interval)
-        if args.sample_end is None
-        else args.sample_end
-    )
-    sample_steps = make_sample_steps(args.sample_start, sample_end, args.sample_interval)
-    s1_fit, s2_fit, loss_fit = build_fit_arrays(curves, fit_aliases, sample_steps)
-    params, objective_value = fit_momentum_law(
-        s1=s1_fit,
-        s2=s2_fit,
-        loss=loss_fit,
-        huber_delta=args.huber_delta,
-        maxiter=args.maxiter,
-    )
+    sample_ends = parse_sample_ends(args.sample_end)
+    auto_sample_end = sample_ends is None
+    if sample_ends is None:
+        sample_ends = [
+            infer_sample_end(curves, all_aliases, args.sample_start, args.sample_interval)
+        ]
 
-    metrics_df, predictions_df = evaluate(curves, eval_aliases, params, sample_steps)
+    fit_results: list[FitResult] = []
+    metrics_parts = []
+    prediction_parts = []
+
+    for sample_end in sample_ends:
+        sample_steps = make_sample_steps(args.sample_start, sample_end, args.sample_interval)
+        s1_fit, s2_fit, loss_fit = build_fit_arrays(curves, fit_aliases, sample_steps)
+        params, objective_value = fit_momentum_law(
+            s1=s1_fit,
+            s2=s2_fit,
+            loss=loss_fit,
+            huber_delta=args.huber_delta,
+            maxiter=args.maxiter,
+        )
+
+        metrics_part, predictions_part = evaluate(
+            curves=curves,
+            aliases=eval_aliases,
+            fit_aliases=fit_aliases,
+            params=params,
+            sample_steps=sample_steps,
+            sample_end=sample_end,
+        )
+        fit_results.append(
+            FitResult(
+                sample_end=sample_end,
+                sample_steps=sample_steps,
+                params=params,
+                objective_value=objective_value,
+                metrics=metrics_part,
+            )
+        )
+        metrics_parts.append(metrics_part)
+        prediction_parts.append(predictions_part)
+
+    metrics_df = pd.concat(metrics_parts, ignore_index=True)
+    predictions_df = pd.concat(prediction_parts, ignore_index=True)
     metrics_df.to_csv(output_dir / "metrics.csv", index=False)
     predictions_df.to_csv(output_dir / "predictions.csv", index=False)
     save_figures(
         curves=curves,
         eval_aliases=all_aliases,
         fit_aliases=fit_aliases,
-        params=params,
+        fit_results=fit_results,
         output_dir=output_dir,
-        sample_steps=sample_steps,
         plot_stride=args.plot_stride,
         ema_span=args.ema_span,
     )
 
     summary = {
         "model": "L(s) = L0 + A * S1(s)^(-alpha) - C * S2(s)",
-        "params": {
-            "L0": float(params[0]),
-            "A": float(params[1]),
-            "C": float(params[2]),
-            "alpha": float(params[3]),
-        },
-        "objective_value": objective_value,
+        "fits": [
+            {
+                "sample_end": result.sample_end,
+                "params": {
+                    "L0": float(result.params[0]),
+                    "A": float(result.params[1]),
+                    "C": float(result.params[2]),
+                    "alpha": float(result.params[3]),
+                },
+                "objective_value": result.objective_value,
+                "metrics": result.metrics.to_dict(orient="records"),
+                "matches_reference_code": (
+                    args.sample_start == 1000
+                    and result.sample_end == 20000
+                    and args.sample_interval == 1000
+                ),
+            }
+            for result in fit_results
+        ],
         "fit_runs": fit_aliases,
         "eval_runs": eval_aliases,
-        "metrics": metrics_df.to_dict(orient="records"),
         "data_path": display_path(data_path),
         "output_dir": display_path(output_dir),
         "sampling": {
             "sample_start": args.sample_start,
-            "sample_end": sample_end,
+            "sample_ends": sample_ends,
             "sample_interval": args.sample_interval,
-            "sampled_steps": [int(step) for step in sample_steps],
-            "matches_reference_code": (
-                args.sample_start == 1000
-                and sample_end == 20000
-                and args.sample_interval == 1000
-            ),
-            "auto_sample_end": args.sample_end is None,
+            "auto_sample_end": auto_sample_end,
         },
         "decay_factor": args.decay_factor,
         "huber_delta": args.huber_delta,
+        "ema_span": args.ema_span,
         "initialization": {
             "L0": "np.linspace(0.1, 2.1, 2)",
             "A": "np.linspace(1, 22, 3)",
@@ -614,13 +723,17 @@ def main() -> None:
         json.dump(summary, f, indent=2)
 
     print("Fitted parameters:")
-    print(
-        f"  L0={params[0]:.8g}, A={params[1]:.8g}, "
-        f"C={params[2]:.8g}, alpha={params[3]:.8g}"
-    )
-    print(f"Objective value: {objective_value:.8g}")
+    for result in fit_results:
+        params = result.params
+        print(
+            f"  sample_end={result.sample_end}: "
+            f"L0={params[0]:.8g}, A={params[1]:.8g}, "
+            f"C={params[2]:.8g}, alpha={params[3]:.8g}, "
+            f"objective={result.objective_value:.8g}"
+        )
     print("\nEvaluation metrics:")
     display_cols = [
+        "sample_end",
         "run",
         "mae",
         "mse",
