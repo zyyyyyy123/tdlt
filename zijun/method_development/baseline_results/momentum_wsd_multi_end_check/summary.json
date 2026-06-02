@@ -1,0 +1,387 @@
+{
+  "model": "L(s) = L0 + A * S1(s)^(-alpha) - C * S2(s)",
+  "fits": [
+    {
+      "sample_end": 2000,
+      "params": {
+        "L0": 2.988032660282739,
+        "A": 0.8709304169480182,
+        "C": 1.0,
+        "alpha": 1.2818359306498324
+      },
+      "objective_value": 0.009195747285032797,
+      "metrics": [
+        {
+          "sample_end": 2000,
+          "run": "wsd",
+          "full_run_name": "M:100M_gpt_D:20B_scheduler:wsd_rope",
+          "eval_scope": "unseen_after_sample_end",
+          "n_train_points": 1001,
+          "n_eval_points": 31907,
+          "eval_step_start": 2001,
+          "eval_step_end": 33907,
+          "L0": 2.988032660282739,
+          "A": 0.8709304169480182,
+          "C": 1.0,
+          "alpha": 1.2818359306498324,
+          "mae": 0.19300531255342032,
+          "mse": 0.046562856066318166,
+          "r2": -2.036645416767813,
+          "endpoint_true": 2.6357319355010986,
+          "endpoint_pred": 2.1500366522640073,
+          "endpoint_diff": -0.4856952832370913,
+          "endpoint_abs_diff": 0.4856952832370913
+        }
+      ],
+      "matches_reference_code": false
+    },
+    {
+      "sample_end": 4000,
+      "params": {
+        "L0": 2.66435681706069,
+        "A": 1.1840084129912418,
+        "C": 1.0,
+        "alpha": 0.8309937670222199
+      },
+      "objective_value": 0.02922430986059619,
+      "metrics": [
+        {
+          "sample_end": 4000,
+          "run": "wsd",
+          "full_run_name": "M:100M_gpt_D:20B_scheduler:wsd_rope",
+          "eval_scope": "unseen_after_sample_end",
+          "n_train_points": 3001,
+          "n_eval_points": 29907,
+          "eval_step_start": 4001,
+          "eval_step_end": 33907,
+          "L0": 2.66435681706069,
+          "A": 1.1840084129912418,
+          "C": 1.0,
+          "alpha": 0.8309937670222199,
+          "mae": 0.13466579045070504,
+          "mse": 0.061180843276379626,
+          "r2": -6.2567650983880005,
+          "endpoint_true": 2.6357319355010986,
+          "endpoint_pred": 1.885684302101888,
+          "endpoint_diff": -0.7500476333992105,
+          "endpoint_abs_diff": 0.7500476333992105
+        }
+      ],
+      "matches_reference_code": false
+    },
+    {
+      "sample_end": 6000,
+      "params": {
+        "L0": 2.7341461231359903,
+        "A": 1.1235234199288358,
+        "C": 1.0,
+        "alpha": 0.9239201757219586
+      },
+      "objective_value": 0.05019194435568509,
+      "metrics": [
+        {
+          "sample_end": 6000,
+          "run": "wsd",
+          "full_run_name": "M:100M_gpt_D:20B_scheduler:wsd_rope",
+          "eval_scope": "unseen_after_sample_end",
+          "n_train_points": 5001,
+          "n_eval_points": 27907,
+          "eval_step_start": 6001,
+          "eval_step_end": 33907,
+          "L0": 2.7341461231359903,
+          "A": 1.1235234199288358,
+          "C": 1.0,
+          "alpha": 0.9239201757219586,
+          "mae": 0.12289366459629406,
+          "mse": 0.05470607105730125,
+          "r2": -7.580889931932866,
+          "endpoint_true": 2.6357319355010986,
+          "endpoint_pred": 1.9337583585416225,
+          "endpoint_diff": -0.7019735769594762,
+          "endpoint_abs_diff": 0.7019735769594762
+        }
+      ],
+      "matches_reference_code": false
+    },
+    {
+      "sample_end": 8000,
+      "params": {
+        "L0": 2.7452315102452998,
+        "A": 1.1158120503718527,
+        "C": 1.0,
+        "alpha": 0.9438598453910003
+      },
+      "objective_value": 0.07107695601069204,
+      "metrics": [
+        {
+          "sample_end": 8000,
+          "run": "wsd",
+          "full_run_name": "M:100M_gpt_D:20B_scheduler:wsd_rope",
+          "eval_scope": "unseen_after_sample_end",
+          "n_train_points": 7001,
+          "n_eval_points": 25907,
+          "eval_step_start": 8001,
+          "eval_step_end": 33907,
+          "L0": 2.7452315102452998,
+          "A": 1.1158120503718527,
+          "C": 1.0,
+          "alpha": 0.9438598453910003,
+          "mae": 0.1287713585405236,
+          "mse": 0.05730210128537046,
+          "r2": -9.617734170883447,
+          "endpoint_true": 2.6357319355010986,
+          "endpoint_pred": 1.9413343171376598,
+          "endpoint_diff": -0.6943976183634388,
+          "endpoint_abs_diff": 0.6943976183634388
+        }
+      ],
+      "matches_reference_code": false
+    },
+    {
+      "sample_end": 10000,
+      "params": {
+        "L0": 2.743468015896697,
+        "A": 1.1166147046934112,
+        "C": 1.0,
+        "alpha": 0.9399475732389608
+      },
+      "objective_value": 0.09313369734598478,
+      "metrics": [
+        {
+          "sample_end": 10000,
+          "run": "wsd",
+          "full_run_name": "M:100M_gpt_D:20B_scheduler:wsd_rope",
+          "eval_scope": "unseen_after_sample_end",
+          "n_train_points": 9001,
+          "n_eval_points": 23907,
+          "eval_step_start": 10001,
+          "eval_step_end": 33907,
+          "L0": 2.743468015896697,
+          "A": 1.1166147046934112,
+          "C": 1.0,
+          "alpha": 0.9399475732389608,
+          "mae": 0.13691441429814447,
+          "mse": 0.062190116935516335,
+          "r2": -11.872347858584872,
+          "endpoint_true": 2.6357319355010986,
+          "endpoint_pred": 1.940209840015996,
+          "endpoint_diff": -0.6955220954851027,
+          "endpoint_abs_diff": 0.6955220954851027
+        }
+      ],
+      "matches_reference_code": false
+    },
+    {
+      "sample_end": 12000,
+      "params": {
+        "L0": 2.74084966699204,
+        "A": 1.1180232169168525,
+        "C": 1.0,
+        "alpha": 0.9344323306660333
+      },
+      "objective_value": 0.11379159865098411,
+      "metrics": [
+        {
+          "sample_end": 12000,
+          "run": "wsd",
+          "full_run_name": "M:100M_gpt_D:20B_scheduler:wsd_rope",
+          "eval_scope": "unseen_after_sample_end",
+          "n_train_points": 11001,
+          "n_eval_points": 21907,
+          "eval_step_start": 12001,
+          "eval_step_end": 33907,
+          "L0": 2.74084966699204,
+          "A": 1.1180232169168525,
+          "C": 1.0,
+          "alpha": 0.9344323306660333,
+          "mae": 0.14686142665037016,
+          "mse": 0.06812015985592235,
+          "r2": -14.080364491752357,
+          "endpoint_true": 2.6357319355010986,
+          "endpoint_pred": 1.9385192389612877,
+          "endpoint_diff": -0.6972126965398109,
+          "endpoint_abs_diff": 0.6972126965398109
+        }
+      ],
+      "matches_reference_code": false
+    },
+    {
+      "sample_end": 14000,
+      "params": {
+        "L0": 2.7378164836338224,
+        "A": 1.1194103148790964,
+        "C": 1.0,
+        "alpha": 0.9276436055550059
+      },
+      "objective_value": 0.135569630666953,
+      "metrics": [
+        {
+          "sample_end": 14000,
+          "run": "wsd",
+          "full_run_name": "M:100M_gpt_D:20B_scheduler:wsd_rope",
+          "eval_scope": "unseen_after_sample_end",
+          "n_train_points": 13001,
+          "n_eval_points": 19907,
+          "eval_step_start": 14001,
+          "eval_step_end": 33907,
+          "L0": 2.7378164836338224,
+          "A": 1.1194103148790964,
+          "C": 1.0,
+          "alpha": 0.9276436055550059,
+          "mae": 0.15873828835227305,
+          "mse": 0.07528748345163401,
+          "r2": -16.50655459467528,
+          "endpoint_true": 2.6357319355010986,
+          "endpoint_pred": 1.936638779914212,
+          "endpoint_diff": -0.6990931555868867,
+          "endpoint_abs_diff": 0.6990931555868867
+        }
+      ],
+      "matches_reference_code": false
+    },
+    {
+      "sample_end": 16000,
+      "params": {
+        "L0": 2.7349872091837644,
+        "A": 1.1206143865239542,
+        "C": 1.0,
+        "alpha": 0.9211381314247703
+      },
+      "objective_value": 0.15788018226328562,
+      "metrics": [
+        {
+          "sample_end": 16000,
+          "run": "wsd",
+          "full_run_name": "M:100M_gpt_D:20B_scheduler:wsd_rope",
+          "eval_scope": "unseen_after_sample_end",
+          "n_train_points": 15001,
+          "n_eval_points": 17907,
+          "eval_step_start": 16001,
+          "eval_step_end": 33907,
+          "L0": 2.7349872091837644,
+          "A": 1.1206143865239542,
+          "C": 1.0,
+          "alpha": 0.9211381314247703,
+          "mae": 0.17320530456575256,
+          "mse": 0.08400618262973106,
+          "r2": -19.159016099309717,
+          "endpoint_true": 2.6357319355010986,
+          "endpoint_pred": 1.9349351422854733,
+          "endpoint_diff": -0.7007967932156254,
+          "endpoint_abs_diff": 0.7007967932156254
+        }
+      ],
+      "matches_reference_code": false
+    },
+    {
+      "sample_end": 18000,
+      "params": {
+        "L0": 2.730981746769911,
+        "A": 1.1220128858900185,
+        "C": 1.0,
+        "alpha": 0.9114832471817714
+      },
+      "objective_value": 0.18009332438952178,
+      "metrics": [
+        {
+          "sample_end": 18000,
+          "run": "wsd",
+          "full_run_name": "M:100M_gpt_D:20B_scheduler:wsd_rope",
+          "eval_scope": "unseen_after_sample_end",
+          "n_train_points": 17001,
+          "n_eval_points": 15907,
+          "eval_step_start": 18001,
+          "eval_step_end": 33907,
+          "L0": 2.730981746769911,
+          "A": 1.1220128858900185,
+          "C": 1.0,
+          "alpha": 0.9114832471817714,
+          "mae": 0.19157388453948687,
+          "mse": 0.09511840945002935,
+          "r2": -22.263421492854484,
+          "endpoint_true": 2.6357319355010986,
+          "endpoint_pred": 1.9326313149117744,
+          "endpoint_diff": -0.7031006205893242,
+          "endpoint_abs_diff": 0.7031006205893242
+        }
+      ],
+      "matches_reference_code": false
+    },
+    {
+      "sample_end": 20000,
+      "params": {
+        "L0": 2.728522454643845,
+        "A": 1.1228262848443897,
+        "C": 1.0,
+        "alpha": 0.905473721756255
+      },
+      "objective_value": 0.2025972546315342,
+      "metrics": [
+        {
+          "sample_end": 20000,
+          "run": "wsd",
+          "full_run_name": "M:100M_gpt_D:20B_scheduler:wsd_rope",
+          "eval_scope": "unseen_after_sample_end",
+          "n_train_points": 19001,
+          "n_eval_points": 13907,
+          "eval_step_start": 20001,
+          "eval_step_end": 33907,
+          "L0": 2.728522454643845,
+          "A": 1.1228262848443897,
+          "C": 1.0,
+          "alpha": 0.905473721756255,
+          "mae": 0.21490175127384592,
+          "mse": 0.10908293326080742,
+          "r2": -26.178702642642964,
+          "endpoint_true": 2.6357319355010986,
+          "endpoint_pred": 1.931258094421928,
+          "endpoint_diff": -0.7044738410791707,
+          "endpoint_abs_diff": 0.7044738410791707
+        }
+      ],
+      "matches_reference_code": false
+    }
+  ],
+  "fit_runs": [
+    "wsd"
+  ],
+  "eval_runs": [
+    "wsd"
+  ],
+  "data_path": "loss curves/gpt_loss+lrs.pkl",
+  "output_dir": "zijun/method_development/baseline_results/momentum_wsd_multi_end_check",
+  "sampling": {
+    "sample_start": 1000,
+    "sample_ends": [
+      2000,
+      4000,
+      6000,
+      8000,
+      10000,
+      12000,
+      14000,
+      16000,
+      18000,
+      20000
+    ],
+    "sample_interval": 1,
+    "auto_sample_end": false
+  },
+  "decay_factor": 0.999,
+  "huber_delta": 0.001,
+  "ema_span": 99,
+  "initialization": {
+    "L0": "np.linspace(0.1, 2.1, 2)",
+    "A": "np.linspace(1, 22, 3)",
+    "C": "np.linspace(1, 22, 3)",
+    "alpha": "np.linspace(0, 0.8, 3)"
+  },
+  "optimizer": {
+    "method": "L-BFGS-B",
+    "bounds": "(0, inf) for L0, A, C, alpha",
+    "maxiter": 100000,
+    "ftol": 1e-09,
+    "gtol": 1e-06,
+    "eps": 1e-08
+  }
+}
