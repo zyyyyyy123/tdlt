@@ -13,3 +13,5 @@ zijun/method_development/outputs/.matplotlib/
 zijun/method_development/outputs/*_predictions.csv
 !zijun/method_development/outputs/key_momentum_residual_predictions.csv
 zijun/method_development/baseline_results/*_predictions.csv
+zijun/method_development/baseline_results/**/predictions.csv
+zijun/method_development/baseline_results/**/*.png
