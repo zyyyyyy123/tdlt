@@ -4,7 +4,7 @@
 
 - 脚本：`code/momentum_residual_mlp.py`
 - 默认数据：`loss curves/gpt_loss+lrs.pkl`
-- 默认输出：`code/momentum_residual_mlp_results/`
+- 默认输出：`results/momentum_residual_mlp_results/`
 - 默认协议：`cosine` 训练，`811` 验证，`wsd` 测试
 
 脚本只读取原始数据，不会修改 `loss curves/` 中的数据文件。
@@ -77,7 +77,7 @@ MAE 相对 momentum baseline 提升约 `10.497%`。
 运行后会生成：
 
 ```text
-code/momentum_residual_mlp_results/
+results/reproduction/momentum_residual_mlp_results/
   summary.json
   README.md
   metrics.csv
@@ -102,7 +102,7 @@ code/momentum_residual_mlp_results/
 指定输出目录：
 
 ```powershell
-python -B code\momentum_residual_mlp.py --output-dir code\my_results
+python -B code\momentum_residual_mlp.py --output-dir results\reproduction\my_residual_mlp_results
 ```
 
 改最近差分窗口长度：

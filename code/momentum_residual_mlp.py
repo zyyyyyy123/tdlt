@@ -9,10 +9,10 @@ The analytic baseline is the momentum law
   L = L0 + A * S1^(-alpha) - C * S2
 
 The residual model learns either loss - momentum_prediction or
-log(loss) - log(momentum_prediction) with a small MLP. The default uses direct
-residuals with ReLU because that is the stronger first usable configuration in
-the current cross-schedule protocol. The final shrink factor is selected only
-on the 811 validation curve; WSD is held out until reporting.
+log(loss) - log(momentum_prediction) with a small MLP. The default restores the
+10-feature kernel-summary configuration that reaches WSD R2 above 0.94 in the
+cross-schedule protocol. The final shrink factor is selected only on the 811
+validation curve; WSD is held out until reporting.
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ RUN_ALIASES = {
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 DEFAULT_DATA_PATH = PROJECT_ROOT / "loss curves" / "gpt_loss+lrs.pkl"
-DEFAULT_OUTPUT_DIR = SCRIPT_DIR / "momentum_residual_mlp_results"
+DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "results" / "reproduction" / "momentum_residual_mlp_results"
 
 
 @dataclass
