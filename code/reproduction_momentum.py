@@ -100,7 +100,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--sample-interval",
         type=int,
-        default=2,
+        default=1,
         help="Step interval for sampled fitting/evaluation points.",
     )
     parser.add_argument(
@@ -431,9 +431,8 @@ def evaluate(
             eval_idx = np.where(curve.step > sample_end)[0]
             eval_scope = "unseen_after_sample_end"
             if eval_idx.size == 0:
-                raise ValueError(
-                    f"Run {curve.alias!r} has no unseen evaluation points after sample_end={sample_end}."
-                )
+                eval_idx = sampled_idx
+                eval_scope = "sampled_steps_cross_run (no unseen steps)"
         else:
             eval_idx = sampled_idx
             eval_scope = "sampled_steps_cross_run"
