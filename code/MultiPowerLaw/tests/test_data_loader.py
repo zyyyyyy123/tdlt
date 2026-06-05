@@ -1,35 +1,29 @@
-import os
+from pathlib import Path
+
 import numpy as np
-import argparse
-import matplotlib.pyplot as plt
 from src.config import FOLDER_PATHS, FILES
 from src.data_loader import load_data
 
+
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+
+
 def test_data_loader():
-    parser = argparse.ArgumentParser(description="Learning Rate Scheduler Fitting")
-    parser.add_argument("--folder_path", "-f", type=str, default="400", choices=["25", "100", "400"],
-                        help="Model size folder path")
-    args = parser.parse_args()
-    
-    folder_path = FOLDER_PATHS[args.folder_path]
-    fig_folder = f"./{args.folder_path}M/"
-    os.makedirs(fig_folder, exist_ok=True)
-    os.makedirs(f"{fig_folder}/lrs", exist_ok=True)
-    os.makedirs(f"{fig_folder}/loss", exist_ok=True)
-    
-    # Load and visualize data
-    data = load_data(folder_path)
+    folder_path = PROJECT_DIR / FOLDER_PATHS["400"]
+    data = load_data(str(folder_path))
+
+    assert set(data) == set(FILES)
     for file_name in FILES:
-        step, lrs, loss = data[file_name]["step"], data[file_name]["lrs"], data[file_name]["loss"]
-        file_id = file_name.split(".")[0]
-        plt.plot(np.arange(len(lrs)), lrs, label=file_id)
-        plt.legend()
-        plt.savefig(f"{fig_folder}/lrs/{file_id}_lrs.png")
-        plt.close()
-        plt.plot(step, loss, label=file_id)
-        plt.legend()
-        plt.savefig(f"{fig_folder}/loss/{file_id}_loss.png")
-        plt.close()
+        step = data[file_name]["step"]
+        lrs = data[file_name]["lrs"]
+        loss = data[file_name]["loss"]
+
+        assert len(step) > 0
+        assert len(step) == len(loss)
+        assert len(lrs) >= int(step.max())
+        assert np.all(np.isfinite(loss))
+        assert np.all(np.isfinite(lrs))
+        assert np.all(lrs >= 0)
 
 if __name__ == "__main__":
     test_data_loader()

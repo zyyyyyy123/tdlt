@@ -102,10 +102,10 @@ M:100M_gpt_D:20B_scheduler:cosine_rope
 
 ## 环境配置
 
-建议使用 conda 创建独立环境：
+建议使用 conda 创建独立环境。当前仓库已在 Python 3.11 下验证：
 
 ```bash
-conda create -n tdlt python=3.14
+conda create -n tdlt python=3.11
 conda activate tdlt
 pip install -r code/requirements.txt
 ```
