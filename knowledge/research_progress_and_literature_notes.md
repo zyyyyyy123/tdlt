@@ -34,7 +34,10 @@ future reads can load only the relevant section.
 - Sujianlin-inspired event leftover is now a qualified secondary candidate:
   `step_plus_event_leftover` has aligned-feature, feature-family,
   `cosine+811`, and WSD within-curve bootstrap support for full/tail
-  improvement, but endpoint behavior remains a separate caveat.
+  improvement, but endpoint behavior remains a separate caveat. The
+  event-leftover no-lookahead audit keeps WSD out of fitting/selection and out
+  of all-candidate grids; WSD metrics are reported only after validation
+  selection.
 - Important caveat: direct schedule-feature fitting and high-dimensional
   residual fitting transfer poorly; baseline-informed correction is more stable.
 

@@ -104,6 +104,7 @@ zijun/method_development/scripts/run_sujianlin_event_decay_ablation.py
 zijun/method_development/scripts/run_step_plus_event_leftover_stability_audit.py
 zijun/method_development/experiment_logs/attempt_011_sujianlin_event_decay_ablation.md
 zijun/method_development/experiment_logs/attempt_012_step_plus_event_leftover_stability_audit.md
+zijun/method_development/experiment_logs/attempt_013_no_lookahead_event_leftover_audit.md
 zijun/method_development/outputs/sujianlin_event_decay_*.csv
 zijun/method_development/outputs/step_plus_event_stability_*.csv
 ```
@@ -152,6 +153,12 @@ Attempt 012 对这个结论做了稳定性审计。它使用 4096-bin step splin
 更新判断：`step_plus_event_leftover` 可以作为 step template 之后的低维
 event/linear-tail 修正来讲；但不能讲成 endpoint-loss 改进，也不能讲成
 真实 optimizer state 或 WD state 已被识别。
+
+Attempt 013 做了 no-lookahead/output 审计：修正了 step+event 分支的 event
+clip 语义，移除了最终稳定性输出中的 WSD-as-training 诊断行，并且不再在
+全候选 grids 中写出 WSD test 指标。重跑后 `811_full` 选择的 WSD full
+结果不变：momentum `0.037720`，step_reference `0.021281`，
+step_plus_event_leftover `0.011191`。
 
 ## 6. 总结表
 

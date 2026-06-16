@@ -426,10 +426,6 @@ def compact_trial_metrics(frame: pd.DataFrame, residual_pred: np.ndarray) -> dic
         "validation_last2048_mae": val_last,
         "validation_full_tail_score": 0.5 * val_full + 0.3 * val_tail + 0.2 * val_last,
         "validation_endpoint_abs_diff": value("validation", "full", "endpoint_abs_diff"),
-        "test_full_mae": value("test", "full", "mae"),
-        "test_tail_mae": value("test", "tail_27126_33906", "mae"),
-        "test_last2048_mae": value("test", "last_2048_sampled", "mae"),
-        "test_endpoint_abs_diff": value("test", "full", "endpoint_abs_diff"),
     }
 
 
@@ -623,6 +619,11 @@ def run_step_plus_event_candidates(
             x_all, names = feature_cache[event_config.feature_set]
             coef = fit_ridge(x_all[train_mask], leftover_train, event_config.ridge_alpha)
             event_leftover = predict_ridge(x_all, coef) * event_config.shrink
+            event_leftover = np.clip(
+                event_leftover,
+                -event_config.residual_clip,
+                event_config.residual_clip,
+            )
             residual_pred = np.clip(
                 step_residual + event_leftover,
                 -step_config.residual_clip,

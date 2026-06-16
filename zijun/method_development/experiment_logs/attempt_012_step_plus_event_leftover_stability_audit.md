@@ -29,8 +29,10 @@ numbers. The purpose is mechanism and stability testing:
 - Main split: train `cosine`, test `wsd`.
 - Extra split checks:
   - train `811`, test `wsd`;
-  - train `cosine+811`, test `wsd`;
-  - train `cosine+wsd`, test `811` is also included in the output table.
+  - train `cosine+811`, test `wsd`.
+  No WSD loss is used for fitting or selection in the WSD test rows.
+- Endpoint-selection grids store validation metrics only; WSD test endpoint
+  metrics are written only for validation-selected configs.
 - Main step template in this audit:
   - `step_reference`: binned spline `s=0.05`, shrink `1.0`, clip `0.15`.
   - `step_base_for_leftover`: binned spline `s=0.05`, shrink `0.75`, clip `0.15`.

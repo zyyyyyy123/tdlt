@@ -10,7 +10,7 @@
 6. WSD 中后期和 tail dynamics 仍需单独检查，但不再把 `20000-30000` 作为主检测窗口；主报告优先看 full trajectory、tail/decay window 和 endpoint。
 7. smooth residual spline 已通过初步稳定性审计：811 冻结选参后在 WSD 仍显著改善，负对照 residual 模板失败，WSD paired block bootstrap 的 within-curve 改进为正。但 `s=0.01` 虽由 811 选中，复杂度偏高；主报告更适合使用保守的 `s=0.1`，并把结论写成 spline family 稳定而非单个参数最优。由于只有三条 schedule，仍不能声称 schedule-level 统计显著泛化。
 8. `S1` intrinsic-time residual spline 目前是明确负结果。机制审计显示，失败不只是 raw `S1` 外推；即使用 clamp/ratio 修正 support，`S1` 也会把 WSD residual 映射到错误的 cosine phase。当前更稳妥的解释是：momentum law 已经吸收了主要 `S1/S2` 进度项，剩余可迁移 residual 是 absolute-step aligned。
-9. Sujianlin-inspired 审计给出一个有用但有限的补充：EMA/history 和 noise/update schedule proxy 只小幅优于 momentum baseline，不能恢复 step-aligned residual phase；event-decay leftover 是目前唯一值得继续的候选。Attempt 012 进一步支持它捕捉的是 aligned `linear_endpoint` tail correction：zero/shift/reverse 控制失败，WSD full/tail block bootstrap 为正，`cosine+811` 训练仍改善 WSD。但 endpoint 和 last-2048 仍不如 pure step reference，811 单独训练也不能转移到 WSD。
+9. Sujianlin-inspired 审计给出一个有用但有限的补充：EMA/history 和 noise/update schedule proxy 只小幅优于 momentum baseline，不能恢复 step-aligned residual phase；event-decay leftover 是目前唯一值得继续的候选。Attempt 012 进一步支持它捕捉的是 aligned `linear_endpoint` tail correction：zero/shift/reverse 控制失败，WSD full/tail block bootstrap 为正，`cosine+811` 训练仍改善 WSD。Attempt 013 确认 WSD 不参与 fitting/selection，且不再出现在全候选 grids 中。endpoint 和 last-2048 仍不如 pure step reference，811 单独训练也不能转移到 WSD。
 
 ## 6. 下一步建议
 

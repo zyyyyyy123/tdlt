@@ -24,6 +24,8 @@ as an event-local proxy for history:
 - Train: `cosine`.
 - Validation and selection: `811`.
 - Test report only: `wsd`. WSD is not used for config selection.
+- Full candidate trials contain train/validation metrics only; WSD test metrics
+  are written only for validation-selected configs.
 - Selection rules:
   - `811_full`: sort by 811 full MAE, then endpoint error.
   - `811_full_plus_tail`: `0.5 * full + 0.3 * tail_27126_33906 + 0.2 * last_2048`,

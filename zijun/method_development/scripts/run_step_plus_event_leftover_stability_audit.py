@@ -442,9 +442,7 @@ def transfer_metrics(frame: pd.DataFrame) -> pd.DataFrame:
     split_specs = [
         ("cosine",),
         ("811",),
-        ("wsd",),
         ("cosine", "811"),
-        ("cosine", "wsd"),
     ]
     for train_schedules in split_specs:
         predictions = build_predictions_for_split(frame, train_schedules)
@@ -544,10 +542,6 @@ def endpoint_selection(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]
                     "val_tail_mae": float(values.loc[(val_schedule, "tail_27126_33906"), "mae"]),
                     "val_last2048_mae": float(values.loc[(val_schedule, "last_2048_sampled"), "mae"]),
                     "val_endpoint_abs_diff": float(values.loc[(val_schedule, "full"), "endpoint_abs_diff"]),
-                    "test_full_mae": float(values.loc[(target_schedule, "full"), "mae"]),
-                    "test_tail_mae": float(values.loc[(target_schedule, "tail_27126_33906"), "mae"]),
-                    "test_last2048_mae": float(values.loc[(target_schedule, "last_2048_sampled"), "mae"]),
-                    "test_endpoint_abs_diff": float(values.loc[(target_schedule, "full"), "endpoint_abs_diff"]),
                 }
             )
     grid = pd.DataFrame(rows)
@@ -577,6 +571,18 @@ def endpoint_selection(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]
     rules["endpoint_guard"] = guarded.sort_values(["val_full_mae", "val_endpoint_abs_diff", "config"])
     for rule, ordered in rules.items():
         row = ordered.iloc[0].to_dict()
+        selected_metrics = evaluate_model(
+            frame,
+            predictions_by_config[str(row["config"])],
+            train_schedules,
+            "step_plus_event_leftover",
+            "linear_endpoint",
+            "aligned",
+        ).set_index(["target_schedule", "window"])
+        row["test_full_mae"] = float(selected_metrics.loc[(target_schedule, "full"), "mae"])
+        row["test_tail_mae"] = float(selected_metrics.loc[(target_schedule, "tail_27126_33906"), "mae"])
+        row["test_last2048_mae"] = float(selected_metrics.loc[(target_schedule, "last_2048_sampled"), "mae"])
+        row["test_endpoint_abs_diff"] = float(selected_metrics.loc[(target_schedule, "full"), "endpoint_abs_diff"])
         row["selection_rule"] = rule
         row["val_step_reference_full_mae"] = step_ref_full
         row["val_step_reference_endpoint_abs_diff"] = step_ref_endpoint

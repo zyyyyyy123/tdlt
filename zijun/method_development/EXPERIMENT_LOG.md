@@ -32,6 +32,7 @@ This file is now an index. Detailed records are split under
 | 010 | [Sujianlin Noise/Update Coordinate Audit](experiment_logs/attempt_010_sujianlin_noise_update_coordinate_audit.md) | noise/update coordinate proxy | Mixed-to-negative; best schedule-only proxy reaches WSD MAE `0.036435`, with poor residual phase alignment. |
 | 011 | [Sujianlin Event-Local Decay Ablation](experiment_logs/attempt_011_sujianlin_event_decay_ablation.md) | event/endpoint leftover | Best new candidate; event-only improves baseline, and step+event leftover improves WSD full/tail MAE but worsens endpoint/last-2048. |
 | 012 | [Step Plus Event Leftover Stability Audit](experiment_logs/attempt_012_step_plus_event_leftover_stability_audit.md) | stability/mechanism audit | Supports aligned `linear_endpoint` leftover as a real full/tail correction; zero/shift/reverse controls fail, but endpoint caveat and 811-alone transfer failure remain. |
+| 013 | [No-Lookahead Event Leftover Audit](experiment_logs/attempt_013_no_lookahead_event_leftover_audit.md) | leakage/output audit | Fixed event-leftover clip semantics and removed WSD-as-training/all-candidate WSD test exposure; rerun WSD headline remains `0.037720 -> 0.021281 -> 0.011191`. |
 
 ## Current Working Conclusions
 
@@ -55,7 +56,9 @@ This file is now an index. Detailed records are split under
   coordinates do not recover residual phase, while `step_plus_event_leftover`
   now has aligned-feature, feature-family, 811-augmentation, and WSD
   within-curve bootstrap support for full/tail improvement. It should still be
-  reported with an explicit endpoint caveat.
+  reported with an explicit endpoint caveat. A follow-up no-lookahead audit
+  keeps WSD out of fitting/selection and out of all-candidate grids; WSD metrics
+  are reported only after validation selection.
 
 ## Log Template
 
