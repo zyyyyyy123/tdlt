@@ -28,6 +28,10 @@ This file is now an index. Detailed records are split under
 | 006 | [Momentum-MPL Hybrid Decay](experiment_logs/attempt_006_momentum_mpl_hybrid_decay.md) | hybrid decay law | Small WSD improvement over momentum; not competitive with step spline. |
 | 007 | [Spline Stability Audit](experiment_logs/attempt_007_spline_stability_audit.md) | statistical/robustness audit | Spline family remains strong on WSD; `s=0.01` is validation-selected but too wiggly to overemphasize as the main parameter. |
 | 008 | [Step vs S1 Mechanism Audit](experiment_logs/attempt_008_step_vs_s1_mechanism_audit.md) | mechanism audit | Step wins because post-momentum residual phase is absolute-step aligned; raw `S1` also extrapolates, while clamp/ratio still phase-warp. |
+| 009 | [Sujianlin EMA Memory Audit](experiment_logs/attempt_009_sujianlin_ema_memory_audit.md) | optimizer-history proxy | Weak positive; EMA/history features improve WSD momentum MAE `0.037720 -> 0.036327`, far behind step spline. |
+| 010 | [Sujianlin Noise/Update Coordinate Audit](experiment_logs/attempt_010_sujianlin_noise_update_coordinate_audit.md) | noise/update coordinate proxy | Mixed-to-negative; best schedule-only proxy reaches WSD MAE `0.036435`, with poor residual phase alignment. |
+| 011 | [Sujianlin Event-Local Decay Ablation](experiment_logs/attempt_011_sujianlin_event_decay_ablation.md) | event/endpoint leftover | Best new candidate; event-only improves baseline, and step+event leftover improves WSD full/tail MAE but worsens endpoint/last-2048. |
+| 012 | [Step Plus Event Leftover Stability Audit](experiment_logs/attempt_012_step_plus_event_leftover_stability_audit.md) | stability/mechanism audit | Supports aligned `linear_endpoint` leftover as a real full/tail correction; zero/shift/reverse controls fail, but endpoint caveat and 811-alone transfer failure remain. |
 
 ## Current Working Conclusions
 
@@ -46,6 +50,12 @@ This file is now an index. Detailed records are split under
   intrinsic-time spline is phase alignment: after momentum-law correction, the
   transferable residual has high full-resolution step-coordinate correlation
   on WSD (`0.936`) but near-zero/negative `S1`-coordinate correlation.
+- Sujianlin-inspired schedule-history features mostly act as weak proxies unless
+  used as event-local leftover corrections. EMA/history and noise/update
+  coordinates do not recover residual phase, while `step_plus_event_leftover`
+  now has aligned-feature, feature-family, 811-augmentation, and WSD
+  within-curve bootstrap support for full/tail improvement. It should still be
+  reported with an explicit endpoint caveat.
 
 ## Log Template
 
