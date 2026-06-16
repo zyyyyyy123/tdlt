@@ -24,10 +24,12 @@ future reads can load only the relevant section.
 - Current strongest method: momentum-law residual transfer with smooth step-wise
   spline; WSD full sampled MAE `0.037216 -> 0.020657`, R2
   `0.928180 -> 0.979827`.
-- Spline robustness audit: 811-selected spline remains strong on WSD, placebo
-  residual controls fail, and paired WSD block bootstrap has positive
-  within-curve improvement; schedule-level significance is still limited by
-  having only three schedules.
+- Spline robustness audit: the spline family remains strong on WSD under
+  811-based selection, placebo residual controls fail, and paired WSD block
+  bootstrap has positive within-curve improvement. The exact `s=0.01` selection
+  is higher-complexity than necessary, so the conservative report setting should
+  remain `s=0.1`; schedule-level significance is still limited by having only
+  three schedules.
 - Important caveat: direct schedule-feature fitting and high-dimensional
   residual fitting transfer poorly; baseline-informed correction is more stable.
 

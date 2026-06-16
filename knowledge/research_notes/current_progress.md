@@ -133,7 +133,7 @@ WSD full sampled trajectory：
 | mean residual shift | `0.036862` | `0.046243` | `0.013068` | `0.929493` |
 | smooth residual spline | `0.020657` | `0.024735` | `0.007360` | `0.979827` |
 
-WSD `20000-30000` window：
+历史诊断窗口 WSD `20000-30000`：
 
 | model | MAE | RMSE | MAPE | R2 |
 |---|---:|---:|---:|---:|
@@ -146,6 +146,12 @@ WSD `20000-30000` window：
 - constant residual shift 几乎没有提升，说明收益不是简单 bias correction。
 - smooth step-wise residual 结构能从 cosine 迁移到 WSD。
 - 当前最强结果是 smooth residual spline，WSD full sampled MAE 达到 `0.020657`，R2 达到 `0.979827`。
+- 机制审计进一步解释了为什么 absolute-step spline 比 `S1`
+  intrinsic-time spline 好：full-resolution coordinate interpolation 中，
+  WSD residual 与 cosine residual 按 step 对齐的相关性为 `0.936`，而
+  `S1` raw/clamp 为 `-0.123`，`S1` ratio 为 `-0.008`。Raw `S1` 还有
+  `46.4%` WSD sampled points 超出 cosine `S1` support；clamp/ratio 修掉
+  support 问题后仍会把 WSD 映射到错误的 cosine residual phase。
 
 ### 3.5 已尝试但不是主线的方法
 
@@ -153,5 +159,6 @@ WSD `20000-30000` window：
 |---|---|---|
 | feature ridge sanity check | 用 schedule features 直接 ridge 拟合 loss | 只能检查流程，迁移到 WSD/811 很差 |
 | high-dimensional residual features | 用 step、累计 LR、LR drop 等高维特征学习 residual | 容易过拟合 cosine residual，迁移不稳 |
-| roll5 smooth residual target | 用 trailing 5 sampled-tick rolling mean loss 作为目标 | full roll5 指标有提升，但 `20000-30000` window 表现 mixed |
+| roll5 smooth residual target | 用 trailing 5 sampled-tick rolling mean loss 作为目标 | full roll5 指标有提升，但旧 `20000-30000` 诊断窗口表现 mixed |
 | WSD partial residual forecast | 只看 WSD prefix 后预测未来 | 当前 residual prefix 修正明显不稳定，不适合作为主结论 |
+| `S1` intrinsic-time residual spline | 用累计 LR 或 normalized `S1` 替代 absolute step | 负结果；momentum law 后的 residual 不是纯 `S1` 单变量结构，主要问题是 phase alignment 和 support mismatch |

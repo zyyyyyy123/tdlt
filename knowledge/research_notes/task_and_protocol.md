@@ -65,6 +65,6 @@ lr
 | validation/auxiliary | 811 |
 | test/main transfer | wsd |
 | evaluation start | step `1000` |
-| 重点窗口 | full sampled trajectory 和 `20000-30000` |
+| 重点窗口 | full sampled trajectory、tail/decay window、endpoint |
 
 这个协议符合课程要求：用 cosine LRS 拟合模型，再评估其对 WSD LRS 的预测能力。

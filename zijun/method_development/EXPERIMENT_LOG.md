@@ -9,8 +9,9 @@ This file is now an index. Detailed records are split under
   schedules.
 - Default split: fit on `cosine`, use `811` only as validation/auxiliary when
   available, and report `wsd` as the main transfer target.
-- Default evaluation: sampled points with `step >= 1000`, plus the hard
-  `20000-30000` window.
+- Default evaluation: sampled points with `step >= 1000`, tail/decay windows,
+  and endpoint behavior. The old `20000-30000` window is only a legacy
+  diagnostic, not a primary claim.
 - Every nontrivial experiment should get its own Markdown file in
   `experiment_logs/` and one concise index row below.
 
@@ -25,7 +26,8 @@ This file is now an index. Detailed records are split under
 | 004 | [Roll5 Smooth Residual](experiment_logs/attempt_004_roll5_smooth_residual.md) | noise robustness | Full roll5 improves; hard-window result remains mixed. |
 | 005 | [Intrinsic-Time Spline](experiment_logs/attempt_005_intrinsic_time_spline.md) | FSL-inspired coordinate test | Negative; `S1`-aligned residual transfer fails. |
 | 006 | [Momentum-MPL Hybrid Decay](experiment_logs/attempt_006_momentum_mpl_hybrid_decay.md) | hybrid decay law | Small WSD improvement over momentum; not competitive with step spline. |
-| 007 | [Spline Stability Audit](experiment_logs/attempt_007_spline_stability_audit.md) | statistical/robustness audit | 811-selected spline remains strong on WSD; block CI and placebo controls support the descriptive claim. |
+| 007 | [Spline Stability Audit](experiment_logs/attempt_007_spline_stability_audit.md) | statistical/robustness audit | Spline family remains strong on WSD; `s=0.01` is validation-selected but too wiggly to overemphasize as the main parameter. |
+| 008 | [Step vs S1 Mechanism Audit](experiment_logs/attempt_008_step_vs_s1_mechanism_audit.md) | mechanism audit | Step wins because post-momentum residual phase is absolute-step aligned; raw `S1` also extrapolates, while clamp/ratio still phase-warp. |
 
 ## Current Working Conclusions
 
@@ -36,9 +38,14 @@ This file is now an index. Detailed records are split under
 - Intrinsic-time replacement by `S1` alone is a useful negative result.
 - Momentum-MPL hybrid decay has a weak signal, but the next version should be
   event-local rather than another global cumulative-decay feature model.
-- The spline mainline is now backed by frozen 811 selection, WSD block bootstrap,
-  negative controls, and LOSO transfer checks, but still cannot claim
-  schedule-level statistical significance with only three schedules.
+- The spline mainline is backed by frozen 811 selection, WSD block bootstrap,
+  negative controls, and LOSO transfer checks. The conservative main parameter
+  should remain a smoother setting such as `s=0.1`, because `s=0.01` is strong
+  but visibly higher-complexity.
+- The current explanation for why absolute-step spline beats `S1`
+  intrinsic-time spline is phase alignment: after momentum-law correction, the
+  transferable residual has high full-resolution step-coordinate correlation
+  on WSD (`0.936`) but near-zero/negative `S1`-coordinate correlation.
 
 ## Log Template
 

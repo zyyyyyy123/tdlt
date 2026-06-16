@@ -1,0 +1,5 @@
+diagnostic,value
+validation_test_full_mae_spearman,0.9892857142857142
+validation_test_full_mae_pearson,0.9972363252399374
+selected_config_validation_rank,1.0
+selected_config_test_rank,1.0
