@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +12,18 @@ from scipy.interpolate import UnivariateSpline
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = PROJECT_DIR.parents[1]
 OUTPUT_DIR = PROJECT_DIR / "outputs"
+FIGURE_DIR = PROJECT_DIR / "figures"
+MPL_CACHE_DIR = OUTPUT_DIR / ".matplotlib"
+XDG_CACHE_DIR = OUTPUT_DIR / ".cache"
+MPL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+XDG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("MPLCONFIGDIR", str(MPL_CACHE_DIR))
+os.environ.setdefault("XDG_CACHE_HOME", str(XDG_CACHE_DIR))
+
+import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.patches import ConnectionPatch, Rectangle
+
 MLP_PREDICTIONS = PROJECT_ROOT / "results" / "momentum_residual_mlp_results" / "predictions.csv"
 
 START_STEP = 1000
@@ -733,8 +746,395 @@ def build_summary(
     return pd.DataFrame(rows)
 
 
+def build_event_leftover_display_frame(
+    frame: pd.DataFrame,
+    train_schedules: tuple[str, ...] = ("cosine",),
+) -> pd.DataFrame:
+    predictions = build_predictions_for_split(frame, train_schedules)
+    schedule_mask = frame["schedule"].to_numpy() == "wsd"
+    display = frame.loc[schedule_mask, ["step", "loss", "base_pred_loss"]].copy().reset_index(drop=True)
+    display["step_reference_loss"] = pred_loss(frame, predictions["step_reference"])[schedule_mask]
+    display["step_plus_event_loss"] = pred_loss(frame, predictions["step_plus_event_leftover"])[schedule_mask]
+    display["actual_smooth"] = smooth_for_display(display["loss"], 501)
+    display["step_reference_smooth"] = smooth_for_display(display["step_reference_loss"], 251)
+    display["step_plus_event_smooth"] = smooth_for_display(display["step_plus_event_loss"], 251)
+    return display
+
+
+def plot_event_leftover_contrast(
+    frame: pd.DataFrame,
+    output_path: Path,
+) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    display = build_event_leftover_display_frame(frame)
+    step = display["step"].to_numpy()
+    step_reference_error = smooth_for_display(
+        (display["step_reference_loss"] - display["loss"]).abs(),
+        501,
+    ).to_numpy()
+    step_plus_error = smooth_for_display(
+        (display["step_plus_event_loss"] - display["loss"]).abs(),
+        501,
+    ).to_numpy()
+    error_reduction = step_reference_error - step_plus_error
+    improved = error_reduction >= 0
+
+    raw_step_mae = float((display["step_reference_loss"] - display["loss"]).abs().mean())
+    raw_plus_mae = float((display["step_plus_event_loss"] - display["loss"]).abs().mean())
+    mae_reduction = 100.0 * (1.0 - raw_plus_mae / raw_step_mae)
+
+    fig, axes = plt.subplots(
+        2,
+        1,
+        figsize=(7.0, 4.5),
+        sharex=True,
+        gridspec_kw={"height_ratios": [1.7, 1.0], "hspace": 0.12},
+    )
+    loss_ax, error_ax = axes
+
+    raw_display = downsample_for_display(display)
+    loss_ax.plot(
+        raw_display["step"],
+        raw_display["loss"],
+        color="#4D4D4D",
+        alpha=0.12,
+        linewidth=0.4,
+        label="actual raw",
+        rasterized=True,
+        zorder=1,
+    )
+    loss_ax.fill_between(
+        step,
+        display["step_reference_smooth"],
+        display["step_plus_event_smooth"],
+        color="#009988",
+        alpha=0.17,
+        linewidth=0,
+        label="step-to-event gap",
+        zorder=2,
+    )
+    loss_ax.plot(
+        step,
+        display["actual_smooth"],
+        color="#111111",
+        linewidth=1.45,
+        label="actual smoothed",
+        zorder=5,
+    )
+    loss_ax.plot(
+        step,
+        display["step_reference_smooth"],
+        color="#D55E00",
+        linestyle="--",
+        linewidth=1.45,
+        label="step reference",
+        zorder=4,
+    )
+    loss_ax.plot(
+        step,
+        display["step_plus_event_smooth"],
+        color="#009988",
+        linewidth=1.8,
+        label="step + event",
+        zorder=6,
+    )
+    loss_ax.text(
+        0.015,
+        0.08,
+        f"WSD MAE: {raw_step_mae:.4f} -> {raw_plus_mae:.4f} ({mae_reduction:.0f}% lower)",
+        transform=loss_ax.transAxes,
+        fontsize=8.2,
+        bbox={"facecolor": "white", "edgecolor": "#DDDDDD", "alpha": 0.9, "pad": 3.0},
+    )
+    loss_ax.set_title("Event/tail leftover: incremental WSD gain", fontsize=10, pad=4)
+    loss_ax.set_ylabel("Loss")
+    loss_ax.legend(
+        frameon=True,
+        framealpha=0.9,
+        edgecolor="#DDDDDD",
+        fontsize=7.2,
+        ncol=2,
+        loc="upper right",
+        borderpad=0.4,
+        handlelength=2.0,
+    )
+
+    error_ax.fill_between(
+        step,
+        0,
+        error_reduction,
+        where=improved,
+        color="#009988",
+        alpha=0.27,
+        interpolate=True,
+        linewidth=0,
+        label="event better",
+    )
+    error_ax.fill_between(
+        step,
+        0,
+        error_reduction,
+        where=~improved,
+        color="#D55E00",
+        alpha=0.22,
+        interpolate=True,
+        linewidth=0,
+        label="event worse",
+    )
+    error_ax.axhline(0, color="#111111", linewidth=0.8, alpha=0.8)
+    error_ax.plot(
+        step,
+        error_reduction,
+        color="#009988",
+        linewidth=1.55,
+        label="error reduction",
+        zorder=4,
+    )
+    error_ax.set_title("Absolute-error reduction over step reference", fontsize=9, pad=3)
+    error_ax.set_ylabel("reduction")
+    error_ax.set_xlabel("Step")
+    error_ax.set_ylim(error_reduction.min() * 1.15, error_reduction.max() * 1.18)
+    error_ax.legend(
+        frameon=False,
+        fontsize=7.0,
+        ncol=3,
+        loc="upper right",
+        handlelength=1.8,
+    )
+
+    style_axes([loss_ax, error_ax])
+    fig.subplots_adjust(left=0.1, right=0.98, top=0.92, bottom=0.12, hspace=0.14)
+    fig.savefig(output_path, dpi=240, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_event_leftover_edge_zoom(
+    frame: pd.DataFrame,
+    output_path: Path,
+) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    display = build_event_leftover_display_frame(frame)
+    step_min = int(display["step"].min())
+    step_max = int(display["step"].max())
+    windows = [
+        ("Mid/pre-tail", 15000, TAIL_START_STEP - 1),
+        ("Decay/tail", TAIL_START_STEP, step_max),
+    ]
+
+    fig = plt.figure(figsize=(7.2, 4.2))
+    grid = fig.add_gridspec(
+        2,
+        2,
+        width_ratios=[2.2, 1.0],
+        height_ratios=[1.0, 1.0],
+        wspace=0.23,
+        hspace=0.36,
+    )
+    main_ax = fig.add_subplot(grid[:, 0])
+    zoom_axes = [fig.add_subplot(grid[0, 1]), fig.add_subplot(grid[1, 1])]
+
+    raw_display = downsample_for_display(display)
+    main_ax.plot(
+        raw_display["step"],
+        raw_display["loss"],
+        color="#4D4D4D",
+        alpha=0.12,
+        linewidth=0.35,
+        label="actual raw",
+        rasterized=True,
+        zorder=1,
+    )
+    main_ax.plot(
+        display["step"],
+        display["actual_smooth"],
+        color="#111111",
+        linewidth=1.35,
+        label="actual smoothed",
+        zorder=5,
+    )
+    main_ax.plot(
+        display["step"],
+        display["step_reference_smooth"],
+        color="#D55E00",
+        linestyle="--",
+        linewidth=1.25,
+        label="step reference",
+        zorder=4,
+    )
+    main_ax.plot(
+        display["step"],
+        display["step_plus_event_smooth"],
+        color="#009988",
+        linewidth=1.55,
+        label="step + event",
+        zorder=6,
+    )
+    main_ax.set_title("Event/tail leftover: pre-tail and decay zooms", fontsize=10, pad=5)
+    main_ax.set_xlabel("Step")
+    main_ax.set_ylabel("Loss")
+    main_ax.legend(
+        frameon=True,
+        framealpha=0.9,
+        edgecolor="#DDDDDD",
+        fontsize=6.7,
+        ncol=2,
+        loc="upper right",
+        borderpad=0.35,
+        handlelength=1.8,
+    )
+
+    for zoom_ax, (name, start_step, end_step) in zip(zoom_axes, windows):
+        local = display[(display["step"] >= start_step) & (display["step"] <= end_step)].copy()
+        plot_event_zoom_window(zoom_ax, local, name, start_step, end_step)
+        add_event_zoom_rectangle_and_connectors(main_ax, zoom_ax, local)
+
+    style_axes([main_ax, *zoom_axes])
+    fig.subplots_adjust(left=0.08, right=0.98, top=0.91, bottom=0.13)
+    fig.savefig(output_path, dpi=240, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_event_zoom_window(
+    ax: Axes,
+    local: pd.DataFrame,
+    name: str,
+    start_step: int,
+    end_step: int,
+) -> None:
+    ax.plot(
+        local["step"],
+        local["loss"],
+        color="#4D4D4D",
+        alpha=0.12,
+        linewidth=0.35,
+        rasterized=True,
+        zorder=1,
+    )
+    ax.fill_between(
+        local["step"],
+        local["step_reference_smooth"],
+        local["step_plus_event_smooth"],
+        color="#009988",
+        alpha=0.17,
+        linewidth=0,
+        zorder=2,
+    )
+    ax.plot(local["step"], local["actual_smooth"], color="#111111", linewidth=1.25, zorder=5)
+    ax.plot(
+        local["step"],
+        local["step_reference_smooth"],
+        color="#D55E00",
+        linestyle="--",
+        linewidth=1.15,
+        zorder=4,
+    )
+    ax.plot(local["step"], local["step_plus_event_smooth"], color="#009988", linewidth=1.45, zorder=6)
+
+    step_mae = float((local["step_reference_loss"] - local["loss"]).abs().mean())
+    plus_mae = float((local["step_plus_event_loss"] - local["loss"]).abs().mean())
+    reduction = 100.0 * (1.0 - plus_mae / step_mae)
+    ax.text(
+        0.05,
+        0.08,
+        f"MAE {step_mae:.4f} -> {plus_mae:.4f}\n{reduction:.0f}% lower",
+        transform=ax.transAxes,
+        fontsize=6.8,
+        bbox={"facecolor": "white", "edgecolor": "#DDDDDD", "alpha": 0.9, "pad": 2.4},
+        zorder=7,
+    )
+
+    y_columns = ["loss", "actual_smooth", "step_reference_smooth", "step_plus_event_smooth"]
+    y_min = min(local[col].quantile(0.02) for col in y_columns)
+    y_max = max(local[col].quantile(0.98) for col in y_columns)
+    y_pad = max((y_max - y_min) * 0.18, 1e-3)
+    ax.set_xlim(start_step, end_step)
+    ax.set_ylim(y_min - y_pad, y_max + y_pad)
+    ax.set_title(f"{name}: steps {start_step}-{end_step}", fontsize=8.2, pad=3)
+    ax.set_ylabel("Loss", fontsize=8)
+    if name == "Decay/tail":
+        ax.set_xlabel("Step", fontsize=8)
+
+
+def add_event_zoom_rectangle_and_connectors(
+    main_ax: Axes,
+    zoom_ax: Axes,
+    local: pd.DataFrame,
+) -> None:
+    x0 = float(local["step"].min())
+    x1 = float(local["step"].max())
+    y_columns = ["loss", "actual_smooth", "step_reference_smooth", "step_plus_event_smooth"]
+    y0 = min(local[col].quantile(0.02) for col in y_columns)
+    y1 = max(local[col].quantile(0.98) for col in y_columns)
+    y_pad = max((y1 - y0) * 0.12, 1e-3)
+    y0 -= y_pad
+    y1 += y_pad
+
+    rect = Rectangle(
+        (x0, y0),
+        x1 - x0,
+        y1 - y0,
+        fill=False,
+        edgecolor="#777777",
+        linewidth=0.8,
+        zorder=8,
+    )
+    main_ax.add_patch(rect)
+
+    for y_rect, y_zoom in [(y1, 1.0), (y0, 0.0)]:
+        connector = ConnectionPatch(
+            xyA=(0.0, y_zoom),
+            coordsA=zoom_ax.transAxes,
+            xyB=(x1, y_rect),
+            coordsB=main_ax.transData,
+            color="#A0A0A0",
+            linewidth=0.65,
+            alpha=0.85,
+            zorder=0,
+        )
+        main_ax.figure.add_artist(connector)
+
+
+def smooth_for_display(values: pd.Series, window: int) -> pd.Series:
+    series = values.reset_index(drop=True).astype(float)
+    if len(series) < 5:
+        return series
+
+    window = min(window, len(series))
+    if window % 2 == 0:
+        window -= 1
+    if window < 5:
+        return series
+
+    min_periods = max(5, window // 8)
+    smoothed = series.rolling(window, center=True, min_periods=min_periods).median()
+    mean_window = max(5, window // 5)
+    mean_window = min(mean_window, len(series))
+    if mean_window % 2 == 0:
+        mean_window -= 1
+    smoothed = smoothed.rolling(
+        mean_window,
+        center=True,
+        min_periods=max(3, mean_window // 2),
+    ).mean()
+    return smoothed.bfill().ffill()
+
+
+def downsample_for_display(frame: pd.DataFrame, max_points: int = 6000) -> pd.DataFrame:
+    stride = max(1, len(frame) // max_points)
+    return frame.iloc[::stride]
+
+
+def style_axes(axes: list[Axes]) -> None:
+    for ax in axes:
+        ax.grid(alpha=0.20, linewidth=0.7, linestyle=(0, (1.5, 3.0)))
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.tick_params(labelsize=7.5)
+
+
 def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     frame = add_event_geometry(load_predictions())
 
     transfer = transfer_metrics(frame)
@@ -751,6 +1151,15 @@ def main() -> None:
     endpoint_selected.to_csv(OUTPUT_DIR / "step_plus_event_stability_endpoint_selected.csv", index=False)
     boot.to_csv(OUTPUT_DIR / "step_plus_event_stability_block_bootstrap.csv", index=False)
     summary.to_csv(OUTPUT_DIR / "step_plus_event_stability_summary.csv", index=False)
+
+    plot_event_leftover_contrast(
+        frame,
+        FIGURE_DIR / "step_plus_event_leftover_contrast.png",
+    )
+    plot_event_leftover_edge_zoom(
+        frame,
+        FIGURE_DIR / "step_plus_event_leftover_edge_zoom.png",
+    )
 
     print("Step+event stability summary:")
     print(summary.to_string(index=False))

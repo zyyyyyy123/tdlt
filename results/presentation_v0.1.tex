@@ -567,10 +567,16 @@
       \(\gamma\) is a shrinkage coefficient, and \(c\) bounds the residual magnitude.
     \end{column}
     \begin{column}{0.44\textwidth}
-      \includegraphics[width=\textwidth]{zijun/method_development/figures/momentum_residual_spline_full.png}
-      \smallnote{Visual diagnostic: momentum baseline and smooth residual correction on cosine/WSD sampled trajectories.}
+      \includegraphics[width=\textwidth]{figures/momentum_residual_spline_contrast.png}
+      \smallnote{Top: loss trajectory with the baseline-to-spline gap shaded. Bottom: absolute-error reduction; positive blue area means the spline correction is closer to the raw loss.}
     \end{column}
   \end{columns}
+\end{frame}
+
+\begin{frame}{Where the Spline Helps: Head and Tail}
+  \centering
+  \includegraphics[width=0.94\textwidth]{figures/momentum_residual_spline_edge_zoom.png}
+  \smallnote{Local zooms follow the multi-panel style of MPL figures: the spline gain is concentrated in the early transient and late WSD decay windows. Shaded bands show the baseline-to-spline gap.}
 \end{frame}
 
 \begin{frame}{Step Spline Result and Mechanism}
@@ -716,8 +722,9 @@
 \end{frame}
 
 \begin{frame}{Method II: Event/Tail Leftover}
-  The step template leaves a small but systematic tail leftover. We fit a
-  ridge correction \(h_\beta(z_t)\) on cosine leftover features:
+  Motivated by Su Jianlin's sliding-average view of weight decay and
+  learning-rate schedules \cite{sujianlin2025wdlr}, we model the step
+  template's tail leftover with a schedule-history proxy:
   \[
     \ell_{\rm cos}(t)=r_{\rm cos}(t)-g^*(t),\qquad
     h_\beta(z_t)=\beta_0+\beta^\top\mathrm{standardize}(z_t),
@@ -742,6 +749,21 @@
       \end{alertblock}
     \end{column}
   \end{columns}
+  \smallnote{The endpoint/tail coordinates also follow the linear-decay
+  endpoint-loss motivation in \cite{sujianlin2025linear}; we use only LR-derived
+  proxies because optimizer states are unobserved.}
+\end{frame}
+
+\begin{frame}{Event/Tail Leftover: Incremental Gain}
+  \centering
+  \includegraphics[width=0.94\textwidth]{figures/step_plus_event_leftover_contrast.png}
+  \smallnote{The advanced correction is evaluated relative to the step reference. Positive teal area means the event/tail leftover reduces absolute prediction error beyond the spline-only model.}
+\end{frame}
+
+\begin{frame}{Where Event/Tail Helps: Mid and Tail}
+  \centering
+  \includegraphics[width=0.94\textwidth]{figures/step_plus_event_leftover_edge_zoom.png}
+  \smallnote{The gain is localized after the early transient: mid/pre-tail structure improves by 27\%, and WSD decay/tail improves by 13\% over the step reference.}
 \end{frame}
 
 \begin{frame}{Event/Tail Feature Evidence}
@@ -1112,6 +1134,16 @@
     \bibitem{bi2024}
     Bi et al. (2024).
     \newblock Multi-step learning-rate schedules for LLM pretraining.
+
+    \bibitem{sujianlin2025wdlr}
+    苏剑林 (2025).
+    \newblock 滑动平均视角下的权重衰减和学习率.
+    \newblock 科学空间. \url{https://spaces.ac.cn/archives/11459}.
+
+    \bibitem{sujianlin2025linear}
+    苏剑林 (2025).
+    \newblock 让炼丹更科学一些（四）：新恒等式，新学习率.
+    \newblock 科学空间. \url{https://kexue.fm/archives/11494}.
   \end{thebibliography}
 \end{frame}
 
