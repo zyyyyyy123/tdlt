@@ -715,72 +715,6 @@
   \smallnote{Conclusion: report a stable spline family, not a claim that one smoothing constant is theoretically special.}
 \end{frame}
 
-\begin{frame}{Step Spline Robustness}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.49\textwidth}
-      \begin{block}{Block-resampled improvement}
-        \scriptsize
-        \begin{tabular}{lccc}
-          \toprule
-          WSD window & mean \(\Delta\) & q05 & \(P(\Delta>0)\)\\
-          \midrule
-          full & 0.016843 & 0.010497 & 1.000\\
-          tail & 0.016898 & 0.010157 & 1.000\\
-          last 2048 & 0.024261 & 0.024261 & 1.000\\
-          \bottomrule
-        \end{tabular}
-      \end{block}
-      \smallnote{\(\Delta=|e_{\rm mom}|-|e_{\rm spline}|\); positive values mean the spline reduces absolute error.}
-    \end{column}
-    \begin{column}{0.49\textwidth}
-      \begin{block}{Residual-template controls}
-        \scriptsize
-        \begin{tabular}{lcc}
-          \toprule
-          template & full MAE & tail MAE\\
-          \midrule
-          true step spline & \textbf{0.020878} & \textbf{0.021855}\\
-          reversed residual & 0.049905 & 0.047814\\
-          circular shift & 0.050053 & 0.051580\\
-          block permutation & 0.050067 & 0.049095\\
-          sign flip & 0.067432 & 0.067303\\
-          \bottomrule
-        \end{tabular}
-      \end{block}
-      \smallnote{Misaligned templates fail, so the gain is tied to residual phase rather than residual magnitude alone.}
-    \end{column}
-  \end{columns}
-\end{frame}
-
-\begin{frame}{Validation Stability of the Step Residual}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.52\textwidth}
-      \begin{table}
-        \centering
-        \tiny
-        \begin{tabular}{lcccc}
-          \toprule
-          config & 8-1-1 MAE & WSD MAE & val rank & test rank\\
-          \midrule
-          \(s=0.01,\lambda=1\) & 0.016447 & 0.020878 & 1 & 1\\
-          \(s=0.05,\lambda=1\) & 0.017002 & 0.021281 & 3 & 3\\
-          \(s=0.10,\lambda=1\) & 0.017600 & 0.021741 & 5 & 5\\
-          \bottomrule
-        \end{tabular}
-      \end{table}
-    \end{column}
-    \begin{column}{0.44\textwidth}
-      \begin{block}{Selection evidence}
-        The 8-1-1 validation ranking closely matches the WSD ranking
-        (\(\rho_{\rm Spearman}=0.989\), \(r_{\rm Pearson}=0.997\)).
-        The best and conservative spline settings differ by less than
-        \(0.001\) WSD MAE.
-      \end{block}
-    \end{column}
-  \end{columns}
-  \smallnote{The evidence supports reporting a stable step-residual family, not a fragile single setting.}
-\end{frame}
-
 \begin{frame}{Method II: Event/Tail Leftover}
   The step template leaves a small but systematic tail leftover. We fit a
   ridge correction \(h_\beta(z_t)\) on cosine leftover features:
@@ -997,9 +931,9 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Binned Robustness and Ablation}
+\begin{frame}{Event Leftover: Robustness Summary}
   \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.52\textwidth}
+    \begin{column}{0.50\textwidth}
       \begin{table}
         \centering
         \scriptsize
@@ -1010,93 +944,33 @@
           step reference & 0.035007 & 0.035694\\
           aligned leftover & \textbf{0.029644} & \textbf{0.031012}\\
           zero event control & 0.035032 & 0.035836\\
-          shifted event control & 0.035132 & 0.036998\\
+          shifted control & 0.035132 & 0.036998\\
           reverse-time control & 0.038455 & 0.036350\\
           \bottomrule
         \end{tabular}
       \end{table}
     \end{column}
-    \begin{column}{0.44\textwidth}
-      \begin{block}{Interpretation}
-        \begin{itemize}
-          \item Aligned event/tail features improve over the step reference.
-          \item Zero, shifted, and reversed controls lose the improvement.
-          \item The binned experiment is a robustness check; the main metric is the full-resolution WSD result.
-        \end{itemize}
-      \end{block}
-    \end{column}
-  \end{columns}
-\end{frame}
-
-\begin{frame}{Within-WSD Bootstrap Evidence}
-  \begin{table}
-    \centering
-    \scriptsize
-    \begin{tabular}{lcccc}
-      \toprule
-      window & mean MAE improvement & q05 & q95 & prob. positive\\
-      \midrule
-      full & 0.005363 & 0.003307 & 0.009138 & 1.000\\
-      tail \(27126\)-\(33906\) & 0.004682 & 0.001656 & 0.006967 & 1.000\\
-      last 512 & \(-0.000188\) & \(-0.000487\) & \(-0.000090\) & 0.000\\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-  \begin{block}{Interpretation}
-    Bootstrap supports the full/tail gain within the WSD curve. It does not
-    prove schedule-level significance because the independent schedule count is three.
-  \end{block}
-\end{frame}
-
-\begin{frame}{Overall Method Comparison}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.52\textwidth}
+    \begin{column}{0.48\textwidth}
       \begin{table}
         \centering
         \scriptsize
-        \begin{tabular}{lcc}
+        \begin{tabular}{lccc}
           \toprule
-          model family & WSD MAE & WSD \(R^2\)\\
+          WSD window & mean gain & q05 & \(P{>}0\)\\
           \midrule
-          Momentum law & 0.037844 & 0.925669\\
-          Multi-Power Law & 0.036027 & 0.935676\\
-          residual spline & 0.020657 & 0.979827\\
-          step reference & 0.021281 & 0.978375\\
-          step + event leftover & \textbf{0.011191} & \textbf{0.993410}\\
+          full & 0.005363 & 0.003307 & 1.000\\
+          tail & 0.004682 & 0.001656 & 1.000\\
+          last 512 & -0.000188 & -0.000487 & 0.000\\
           \bottomrule
         \end{tabular}
       \end{table}
-    \end{column}
-    \begin{column}{0.44\textwidth}
-      \begin{tikzpicture}
-        \begin{axis}[
-          ybar,
-          width=\textwidth,
-          height=4.8cm,
-          ymin=0,
-          ymax=0.042,
-          ylabel={WSD full MAE},
-          symbolic x coords={Mom,MPL,Spline,Step,Step+E},
-          xtick=data,
-          bar width=11pt,
-          enlarge x limits=0.14,
-          ymajorgrids=true,
-          grid style={draw=tdltLight},
-          tick label style={font=\scriptsize},
-          label style={font=\scriptsize},
-        ]
-          \addplot[fill=tdltBlue!70,draw=tdltBlue] coordinates {
-            (Mom,0.037844)
-            (MPL,0.036027)
-            (Spline,0.020657)
-            (Step,0.021281)
-            (Step+E,0.011191)
-          };
-        \end{axis}
-      \end{tikzpicture}
+      \begin{block}{Takeaway}
+        Aligned event/tail geometry gives full and tail gains; shifted or
+        reversed controls fail. The endpoint remains a separate objective.
+      \end{block}
     \end{column}
   \end{columns}
-  \smallnote{Some rows use slightly different sampling/reporting contexts; the main comparison follows the cosine-fit, 8-1-1-validation, WSD-test protocol.}
+  \smallnote{Bootstrap evidence is within-curve support, not schedule-level significance.}
 \end{frame}
 
 \begin{frame}{Empirical Findings}
