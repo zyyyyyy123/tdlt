@@ -11,6 +11,8 @@ os.environ.setdefault("MPLCONFIGDIR", str(MPL_CACHE_DIR))
 os.environ.setdefault("XDG_CACHE_HOME", str(XDG_CACHE_DIR))
 
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.patches import ConnectionPatch, Rectangle
 import pandas as pd
 
 if str(PROJECT_DIR) not in sys.path:
@@ -75,6 +77,10 @@ def main() -> None:
     plot_contrast_model(
         predictions,
         FIGURE_DIR / "momentum_residual_spline_contrast.png",
+    )
+    plot_edge_zoom_model(
+        predictions,
+        FIGURE_DIR / "momentum_residual_spline_edge_zoom.png",
     )
 
     report = metrics[
@@ -344,6 +350,220 @@ def plot_contrast_model(
     fig.subplots_adjust(left=0.1, right=0.98, top=0.92, bottom=0.12, hspace=0.14)
     fig.savefig(output_path, dpi=240, bbox_inches="tight")
     plt.close(fig)
+
+
+def plot_edge_zoom_model(
+    predictions: pd.DataFrame,
+    output_path: Path,
+) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    frame = build_wsd_display_frame(predictions)
+    step_min = int(frame["step"].min())
+    step_max = int(frame["step"].max())
+    windows = [
+        ("Head", step_min, min(step_min + 4000, step_max)),
+        ("Tail", max(step_max - 4500, step_min), step_max),
+    ]
+
+    fig = plt.figure(figsize=(7.2, 4.2))
+    grid = fig.add_gridspec(
+        2,
+        2,
+        width_ratios=[2.2, 1.0],
+        height_ratios=[1.0, 1.0],
+        wspace=0.23,
+        hspace=0.36,
+    )
+    main_ax = fig.add_subplot(grid[:, 0])
+    zoom_axes = [fig.add_subplot(grid[0, 1]), fig.add_subplot(grid[1, 1])]
+
+    raw_frame = downsample_for_display(frame)
+    main_ax.plot(
+        raw_frame["step"],
+        raw_frame["loss"],
+        color="#4D4D4D",
+        alpha=0.12,
+        linewidth=0.35,
+        label="actual raw",
+        rasterized=True,
+        zorder=1,
+    )
+    main_ax.plot(
+        frame["step"],
+        frame["actual_smooth"],
+        color="#111111",
+        linewidth=1.35,
+        label="actual smoothed",
+        zorder=5,
+    )
+    main_ax.plot(
+        frame["step"],
+        frame["baseline_smooth"],
+        color="#D55E00",
+        linestyle="--",
+        linewidth=1.25,
+        label="momentum baseline",
+        zorder=4,
+    )
+    main_ax.plot(
+        frame["step"],
+        frame["spline_smooth"],
+        color="#0072B2",
+        linewidth=1.55,
+        label="spline correction",
+        zorder=6,
+    )
+    main_ax.set_title("WSD transfer: head/tail zoom", fontsize=10, pad=5)
+    main_ax.set_xlabel("Step")
+    main_ax.set_ylabel("Loss")
+    main_ax.legend(
+        frameon=True,
+        framealpha=0.9,
+        edgecolor="#DDDDDD",
+        fontsize=6.7,
+        ncol=2,
+        loc="upper right",
+        borderpad=0.35,
+        handlelength=1.8,
+    )
+
+    for zoom_ax, (name, start_step, end_step) in zip(zoom_axes, windows):
+        local = frame[(frame["step"] >= start_step) & (frame["step"] <= end_step)].copy()
+        plot_zoom_window(zoom_ax, local, name, start_step, end_step)
+        add_zoom_rectangle_and_connectors(main_ax, zoom_ax, local)
+
+    for ax in [main_ax, *zoom_axes]:
+        ax.grid(alpha=0.22, linewidth=0.7, linestyle=(0, (1.5, 3.0)))
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.tick_params(labelsize=7.5)
+
+    fig.subplots_adjust(left=0.08, right=0.98, top=0.91, bottom=0.13)
+    fig.savefig(output_path, dpi=240, bbox_inches="tight")
+    plt.close(fig)
+
+
+def build_wsd_display_frame(predictions: pd.DataFrame) -> pd.DataFrame:
+    base = predictions[
+        (predictions["schedule"] == "wsd")
+        & (predictions["correction"] == "none")
+    ].sort_values("step")
+    corrected = predictions[
+        (predictions["schedule"] == "wsd")
+        & (predictions["correction"] == "smooth_residual")
+        & (predictions["feature_set"] == KEY_FEATURE_SET)
+    ].sort_values("step")
+
+    frame = base[["step", "loss", "base_pred_loss"]].merge(
+        corrected[["step", "pred_loss"]],
+        on="step",
+        how="inner",
+    )
+    frame = frame.rename(columns={"pred_loss": "spline_pred_loss"}).reset_index(drop=True)
+    frame["actual_smooth"] = smooth_for_display(frame["loss"], 501)
+    frame["baseline_smooth"] = smooth_for_display(frame["base_pred_loss"], 251)
+    frame["spline_smooth"] = smooth_for_display(frame["spline_pred_loss"], 251)
+    return frame
+
+
+def plot_zoom_window(
+    ax: Axes,
+    local: pd.DataFrame,
+    name: str,
+    start_step: int,
+    end_step: int,
+) -> None:
+    ax.plot(
+        local["step"],
+        local["loss"],
+        color="#4D4D4D",
+        alpha=0.12,
+        linewidth=0.35,
+        rasterized=True,
+        zorder=1,
+    )
+    ax.fill_between(
+        local["step"],
+        local["baseline_smooth"],
+        local["spline_smooth"],
+        color="#0072B2",
+        alpha=0.16,
+        linewidth=0,
+        zorder=2,
+    )
+    ax.plot(local["step"], local["actual_smooth"], color="#111111", linewidth=1.25, zorder=5)
+    ax.plot(
+        local["step"],
+        local["baseline_smooth"],
+        color="#D55E00",
+        linestyle="--",
+        linewidth=1.15,
+        zorder=4,
+    )
+    ax.plot(local["step"], local["spline_smooth"], color="#0072B2", linewidth=1.45, zorder=6)
+
+    baseline_mae = float((local["base_pred_loss"] - local["loss"]).abs().mean())
+    spline_mae = float((local["spline_pred_loss"] - local["loss"]).abs().mean())
+    reduction = 100.0 * (1.0 - spline_mae / baseline_mae)
+    ax.text(
+        0.05,
+        0.08,
+        f"MAE {baseline_mae:.4f} -> {spline_mae:.4f}\n{reduction:.0f}% lower",
+        transform=ax.transAxes,
+        fontsize=6.8,
+        bbox={"facecolor": "white", "edgecolor": "#DDDDDD", "alpha": 0.9, "pad": 2.4},
+        zorder=7,
+    )
+
+    y_columns = ["loss", "actual_smooth", "baseline_smooth", "spline_smooth"]
+    y_min = min(local[col].quantile(0.02) for col in y_columns)
+    y_max = max(local[col].quantile(0.98) for col in y_columns)
+    y_pad = max((y_max - y_min) * 0.18, 1e-3)
+    ax.set_xlim(start_step, end_step)
+    ax.set_ylim(y_min - y_pad, y_max + y_pad)
+    ax.set_title(f"{name}: steps {start_step}-{end_step}", fontsize=8.2, pad=3)
+    ax.set_ylabel("Loss", fontsize=8)
+    if name == "Tail":
+        ax.set_xlabel("Step", fontsize=8)
+
+
+def add_zoom_rectangle_and_connectors(
+    main_ax: Axes,
+    zoom_ax: Axes,
+    local: pd.DataFrame,
+) -> None:
+    x0 = float(local["step"].min())
+    x1 = float(local["step"].max())
+    y_columns = ["loss", "actual_smooth", "baseline_smooth", "spline_smooth"]
+    y0 = min(local[col].quantile(0.02) for col in y_columns)
+    y1 = max(local[col].quantile(0.98) for col in y_columns)
+    y_pad = max((y1 - y0) * 0.12, 1e-3)
+    y0 -= y_pad
+    y1 += y_pad
+
+    rect = Rectangle(
+        (x0, y0),
+        x1 - x0,
+        y1 - y0,
+        fill=False,
+        edgecolor="#777777",
+        linewidth=0.8,
+        zorder=8,
+    )
+    main_ax.add_patch(rect)
+
+    for y_rect, y_zoom in [(y1, 1.0), (y0, 0.0)]:
+        connector = ConnectionPatch(
+            xyA=(0.0, y_zoom),
+            coordsA=zoom_ax.transAxes,
+            xyB=(x1, y_rect),
+            coordsB=main_ax.transData,
+            color="#A0A0A0",
+            linewidth=0.65,
+            alpha=0.85,
+            zorder=0,
+        )
+        main_ax.figure.add_artist(connector)
 
 
 def smooth_for_display(values: pd.Series, window: int) -> pd.Series:

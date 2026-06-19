@@ -567,10 +567,16 @@
       \(\gamma\) is a shrinkage coefficient, and \(c\) bounds the residual magnitude.
     \end{column}
     \begin{column}{0.44\textwidth}
-      \includegraphics[width=\textwidth]{zijun/method_development/figures/momentum_residual_spline_contrast.png}
+      \includegraphics[width=\textwidth]{figures/momentum_residual_spline_contrast.png}
       \smallnote{Top: loss trajectory with the baseline-to-spline gap shaded. Bottom: absolute-error reduction; positive blue area means the spline correction is closer to the raw loss.}
     \end{column}
   \end{columns}
+\end{frame}
+
+\begin{frame}{Where the Spline Helps: Head and Tail}
+  \centering
+  \includegraphics[width=0.94\textwidth]{figures/momentum_residual_spline_edge_zoom.png}
+  \smallnote{Local zooms follow the multi-panel style of MPL figures: the spline gain is concentrated in the early transient and late WSD decay windows. Shaded bands show the baseline-to-spline gap.}
 \end{frame}
 
 \begin{frame}{Step Spline Result and Mechanism}
