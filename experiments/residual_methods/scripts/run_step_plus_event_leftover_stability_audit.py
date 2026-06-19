@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.patches import ConnectionPatch, Rectangle
 
-MLP_PREDICTIONS = PROJECT_ROOT / "results" / "baselines" / "momentum_residual_mlp" / "predictions.csv"
+MOMENTUM_PREDICTIONS = PROJECT_ROOT / "results" / "intermediates" / "three_schedule_momentum" / "predictions.csv"
 
 START_STEP = 1000
 END_STEP = 33906
@@ -125,7 +125,7 @@ FEATURE_SETS: dict[str, list[str]] = {
 
 
 def load_predictions() -> pd.DataFrame:
-    frame = pd.read_csv(MLP_PREDICTIONS)
+    frame = pd.read_csv(MOMENTUM_PREDICTIONS)
     frame = frame.rename(columns={"run": "schedule", "momentum_s2": "base_pred_loss"})
     frame = frame[["schedule", "step", "loss", "lr", "s1", "s2", "base_pred_loss"]].copy()
     frame = frame[

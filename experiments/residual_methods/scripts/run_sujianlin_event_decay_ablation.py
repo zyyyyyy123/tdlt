@@ -13,7 +13,7 @@ from scipy.interpolate import UnivariateSpline
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = PROJECT_DIR.parents[1]
 OUTPUT_DIR = PROJECT_DIR / "outputs"
-MLP_PREDICTIONS = PROJECT_ROOT / "results" / "baselines" / "momentum_residual_mlp" / "predictions.csv"
+MOMENTUM_PREDICTIONS = PROJECT_ROOT / "results" / "intermediates" / "three_schedule_momentum" / "predictions.csv"
 
 TRAIN_SCHEDULE = "cosine"
 VALIDATION_SCHEDULE = "811"
@@ -154,7 +154,7 @@ TRIAL_EVAL_CACHE: dict[tuple[str, str], dict[str, np.ndarray]] | None = None
 
 
 def load_predictions() -> pd.DataFrame:
-    frame = pd.read_csv(MLP_PREDICTIONS)
+    frame = pd.read_csv(MOMENTUM_PREDICTIONS)
     frame = frame.rename(columns={"run": "schedule", "momentum_s2": "base_pred_loss"})
     frame = frame[
         ["schedule", "step", "loss", "lr", "s1", "s2", "base_pred_loss"]

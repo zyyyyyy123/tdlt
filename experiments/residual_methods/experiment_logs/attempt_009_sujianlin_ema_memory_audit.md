@@ -5,7 +5,7 @@
   historical learning-rate mass, not only the current learning rate. This audit
   tests whether that history-memory view explains the residual left after the
   momentum baseline.
-- Protocol: read `results/momentum_residual_mlp_results/predictions.csv`; keep
+- Protocol: read `results/intermediates/three_schedule_momentum/predictions.csv`; keep
   `1000 <= step <= 33906` with every-2-step sampling; define
   `residual = log(loss) - log(momentum_s2)`; train residual ridge models on
   `cosine`; choose candidates by `811` full-trajectory MAE; report WSD only

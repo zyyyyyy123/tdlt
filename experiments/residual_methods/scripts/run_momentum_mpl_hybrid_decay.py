@@ -25,7 +25,7 @@ if str(PROJECT_DIR) not in sys.path:
 OUTPUT_DIR = PROJECT_DIR / "outputs"
 FIGURE_DIR = PROJECT_DIR / "figures"
 PROJECT_ROOT = PROJECT_DIR.parents[1]
-MLP_PREDICTIONS = PROJECT_ROOT / "results" / "baselines" / "momentum_residual_mlp" / "predictions.csv"
+MOMENTUM_PREDICTIONS = PROJECT_ROOT / "results" / "intermediates" / "three_schedule_momentum" / "predictions.csv"
 
 TRAIN_SCHEDULE = "cosine"
 VALIDATION_SCHEDULE = "811"
@@ -47,7 +47,7 @@ class Candidate:
 
 
 def load_three_schedule_momentum_predictions() -> pd.DataFrame:
-    frame = pd.read_csv(MLP_PREDICTIONS)
+    frame = pd.read_csv(MOMENTUM_PREDICTIONS)
     frame = frame.rename(columns={"run": "schedule", "momentum_s2": "base_pred_loss"})
     frame = frame[
         ["schedule", "step", "loss", "lr", "s1", "s2", "base_pred_loss"]
@@ -58,7 +58,7 @@ def load_three_schedule_momentum_predictions() -> pd.DataFrame:
         & (((frame["step"] - START_STEP) % SAMPLE_INTERVAL) == 0)
     ].copy()
     frame["is_sampled"] = True
-    frame["method"] = "momentum_mlp_three_schedule_baseline"
+    frame["method"] = "three_schedule_momentum_baseline"
     return frame.sort_values(["schedule", "step"]).reset_index(drop=True)
 
 

@@ -24,7 +24,7 @@ if str(PROJECT_DIR) not in sys.path:
 
 OUTPUT_DIR = PROJECT_DIR / "outputs"
 PROJECT_ROOT = PROJECT_DIR.parents[1]
-THREE_RUN_PREDICTIONS = PROJECT_ROOT / "results" / "baselines" / "momentum_residual_mlp" / "predictions.csv"
+THREE_RUN_PREDICTIONS = PROJECT_ROOT / "results" / "intermediates" / "three_schedule_momentum" / "predictions.csv"
 
 SCHEDULES = ["cosine", "811", "wsd"]
 TRAIN_SCHEDULE = "cosine"

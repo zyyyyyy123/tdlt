@@ -1,0 +1,40 @@
+{
+  "purpose": "Full-grid momentum-law predictions for residual spline and event/tail leftover experiments.",
+  "contains_mlp_predictions": false,
+  "schedules": [
+    "cosine",
+    "811",
+    "wsd"
+  ],
+  "rows": 101724,
+  "columns": [
+    "run",
+    "step",
+    "loss",
+    "lr",
+    "s1",
+    "s2",
+    "momentum_s2"
+  ],
+  "data_path": "data/raw/gpt_loss+lrs.pkl",
+  "output_dir": "results/intermediates/three_schedule_momentum",
+  "fit_run": "cosine",
+  "fit_source": "report_intermediate_parameters",
+  "fit_start_step": 1000,
+  "fit_points": 32908,
+  "objective_value": 0.36022910023818566,
+  "decay_factor": 0.999,
+  "huber_delta": 0.001,
+  "params": {
+    "L0": 2.775526277107112,
+    "A": 1.1022055209072599,
+    "C": 0.18095388831549908,
+    "alpha": 1.007070154150098
+  },
+  "fit_initialization": {
+    "L0": "np.linspace(0.5, 2.8, 3)",
+    "A": "np.linspace(0.5, 6.0, 3)",
+    "C": "[0.01, 0.1, 0.5, 1.0]",
+    "alpha": "[0.3, 0.6, 0.9, 1.2]"
+  }
+}

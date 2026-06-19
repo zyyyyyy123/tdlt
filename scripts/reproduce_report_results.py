@@ -15,9 +15,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
     parser.add_argument("--skip-mpl", action="store_true", help="Skip the Multi-Power Law rerun.")
     parser.add_argument(
-        "--refresh-mlp-input",
+        "--refresh-momentum-table",
+        dest="refresh_momentum_table",
         action="store_true",
-        help="Regenerate results/baselines/momentum_residual_mlp before event/tail experiments.",
+        help="Regenerate results/intermediates/three_schedule_momentum before event/tail experiments.",
+    )
+    parser.add_argument(
+        "--refresh-mlp-input",
+        dest="refresh_momentum_table",
+        action="store_true",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--full-audit",
@@ -59,8 +66,11 @@ def main() -> None:
 
     run_step("Momentum-law baseline", [py, "scripts/reproduce_momentum.py"])
 
-    if args.refresh_mlp_input:
-        run_step("Three-schedule momentum/MLP intermediate", [py, "scripts/train_momentum_residual_mlp.py"])
+    if args.refresh_momentum_table:
+        run_step(
+            "Three-schedule momentum intermediate",
+            [py, "scripts/build_three_schedule_momentum_table.py"],
+        )
 
     if not args.skip_mpl:
         run_step(

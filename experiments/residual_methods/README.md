@@ -61,11 +61,16 @@ Momentum baseline predictions:
 results/baselines/momentum/predictions.csv
 ```
 
-Three-schedule momentum/MLP intermediate used by the event/tail audits:
+Three-schedule momentum intermediate used by the event/tail audits:
 
 ```text
-results/baselines/momentum_residual_mlp/predictions.csv
+results/intermediates/three_schedule_momentum/predictions.csv
 ```
+
+This file contains the fitted momentum-law prediction column `momentum_s2`; it
+does not contain or require MLP predictions. The default generator uses the
+report-locked momentum calibration so the residual tables reproduce the slide
+numbers exactly; use `--refit` only for diagnosis.
 
 ## Key Outputs
 

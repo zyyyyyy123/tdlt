@@ -1,0 +1,66 @@
+{
+  "protocol": {
+    "train": "cosine",
+    "validation": "811",
+    "test": "wsd",
+    "start_step": 1000,
+    "selection_rule": "lowest validation MAE on validation run"
+  },
+  "momentum_law": {
+    "formula": "L0 + A*S1^-alpha - C*S2",
+    "params": {
+      "L0": 2.775526277107112,
+      "A": 1.1022055209072599,
+      "C": 0.18095388831549908,
+      "alpha": 1.007070154150098
+    },
+    "objective": 0.36022910023818566
+  },
+  "residual_mlp": {
+    "target": "log_residual",
+    "target_definition": "log(loss) - log(momentum_s2)",
+    "feature_set": "kernel_summary",
+    "m": 64,
+    "features": [
+      "S1",
+      "kernel_ewm_diff_decay_0.9",
+      "kernel_ewm_diff_decay_0.99",
+      "kernel_ewm_diff_decay_0.995",
+      "kernel_ewm_diff_decay_0.999",
+      "kernel_diff_sum",
+      "kernel_abs_diff_sum",
+      "kernel_diff_max",
+      "kernel_diff_min",
+      "kernel_nonzero_diff_count"
+    ],
+    "selected": {
+      "model": "momentum_residual_mlp_seed3081_shrink1p0",
+      "seed": 3081,
+      "shrink": 1.0,
+      "target": "log_residual",
+      "feature_set": "kernel_summary",
+      "m": 64,
+      "feature_count": 10,
+      "hidden": "64-32",
+      "activation": "relu",
+      "scaler": "physics",
+      "alpha": 0.001,
+      "learning_rate": 0.002,
+      "batch_size": 512,
+      "max_iter": 120,
+      "n_iter": 120,
+      "loss_curve_final": 0.4996132331196318,
+      "validation_mae": 0.033844681033268764,
+      "test_mae": 0.033871690991036554,
+      "test_r2": 0.9403154456776949,
+      "test_endpoint_abs_diff": 0.00930743343359186
+    }
+  },
+  "test_result": {
+    "baseline_mae": 0.03784420297520016,
+    "residual_mlp_mae": 0.033871690991036554,
+    "improvement_pct": 10.497015848812685,
+    "baseline_r2": 0.9256689877020283,
+    "residual_mlp_r2": 0.9403154456776949
+  }
+}

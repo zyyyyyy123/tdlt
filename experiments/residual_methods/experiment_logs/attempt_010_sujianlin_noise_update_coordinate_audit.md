@@ -2,7 +2,7 @@
 
 - Goal: test whether sujianlin-inspired schedule-only coordinates explain the
   momentum residual better than the existing step/S1 controls.
-- Protocol: read `results/momentum_residual_mlp_results/predictions.csv`;
+- Protocol: read `results/intermediates/three_schedule_momentum/predictions.csv`;
   compute `residual = log(loss) - log(momentum_s2)`; use points
   `1000 <= step <= 33906` with every-2-step sampling; train interpolation
   templates on `cosine`; use `811` only to select coordinate/config; report

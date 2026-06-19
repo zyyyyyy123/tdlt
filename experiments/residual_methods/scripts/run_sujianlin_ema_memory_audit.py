@@ -20,7 +20,7 @@ os.environ.setdefault("XDG_CACHE_HOME", str(XDG_CACHE_DIR))
 OUTPUT_DIR = PROJECT_DIR / "outputs"
 LOG_DIR = PROJECT_DIR / "experiment_logs"
 PROJECT_ROOT = PROJECT_DIR.parents[1]
-PREDICTIONS_CSV = PROJECT_ROOT / "results" / "baselines" / "momentum_residual_mlp" / "predictions.csv"
+PREDICTIONS_CSV = PROJECT_ROOT / "results" / "intermediates" / "three_schedule_momentum" / "predictions.csv"
 STEP_REFERENCE_METRICS_CSV = OUTPUT_DIR / "spline_stability_selected_metrics.csv"
 
 TRAIN_SCHEDULE = "cosine"
@@ -653,7 +653,7 @@ def write_log(
   historical learning-rate mass, not only the current learning rate. This audit
   tests whether that history-memory view explains the residual left after the
   momentum baseline.
-- Protocol: read `results/baselines/momentum_residual_mlp/predictions.csv`; keep
+- Protocol: read `results/intermediates/three_schedule_momentum/predictions.csv`; keep
   `1000 <= step <= 33906` with every-2-step sampling; define
   `residual = log(loss) - log(momentum_s2)`; train residual ridge models on
   `cosine`; choose candidates by `811` full-trajectory MAE; report WSD only

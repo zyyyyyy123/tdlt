@@ -6,7 +6,7 @@
   falsifiable diagnostics: no-leak selection, coordinate support, common
   support, residual phase alignment, time warp, smoothing stress test, and
   additive step/S1 ablation.
-- Protocol: load `results/momentum_residual_mlp_results/predictions.csv`;
+- Protocol: load `results/intermediates/three_schedule_momentum/predictions.csv`;
   define residual as `log(loss) - log(momentum_s2)`; train templates on
   `cosine`; use `811` only for family/config selection; report `wsd` held out.
   Sampled points are `1000 <= step <= 33906`, every 2 steps. The spline

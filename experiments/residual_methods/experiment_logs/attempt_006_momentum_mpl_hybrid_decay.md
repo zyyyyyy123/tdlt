@@ -8,7 +8,7 @@
 - Process: implemented in
   `scripts/run_momentum_mpl_hybrid_decay.py`. The script reads the three-run
   `momentum_s2` prediction table from
-  `results/momentum_residual_mlp_results/predictions.csv`, samples
+  `results/intermediates/three_schedule_momentum/predictions.csv`, samples
   `1000 <= step <= 33906` every 2 steps, fits only on cosine, selects the
   hybrid decay feature family and shrink using 811 full-trajectory MAE, and
   reports WSD as the held-out transfer target. The reproduced momentum output

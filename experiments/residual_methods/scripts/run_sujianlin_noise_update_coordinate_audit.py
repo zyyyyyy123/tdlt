@@ -19,7 +19,7 @@ os.environ.setdefault("XDG_CACHE_HOME", str(XDG_CACHE_DIR))
 
 OUTPUT_DIR = PROJECT_DIR / "outputs"
 PROJECT_ROOT = PROJECT_DIR.parents[1]
-PREDICTIONS_PATH = PROJECT_ROOT / "results" / "baselines" / "momentum_residual_mlp" / "predictions.csv"
+PREDICTIONS_PATH = PROJECT_ROOT / "results" / "intermediates" / "three_schedule_momentum" / "predictions.csv"
 
 TRAIN_SCHEDULE = "cosine"
 VALIDATION_SCHEDULE = "811"

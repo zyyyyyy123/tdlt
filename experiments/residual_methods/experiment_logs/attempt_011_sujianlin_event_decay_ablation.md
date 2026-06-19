@@ -18,7 +18,7 @@ as an event-local proxy for history:
 ## Protocol
 
 - Script: `zijun/method_development/scripts/run_sujianlin_event_decay_ablation.py`
-- Input: `results/momentum_residual_mlp_results/predictions.csv`
+- Input: `results/intermediates/three_schedule_momentum/predictions.csv`
 - Filter: `1000 <= step <= 33906`, every 2 steps from step 1000.
 - Target residual: `log(loss) - log(momentum_s2)`.
 - Train: `cosine`.

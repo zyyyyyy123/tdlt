@@ -7,6 +7,10 @@ results/*/*/predictions.csv
 results/baselines/*/metrics.csv
 results/baselines/*/predictions.csv
 results/baselines/*/training_history.csv
+!results/intermediates/
+!results/intermediates/three_schedule_momentum/
+!results/intermediates/three_schedule_momentum/predictions.csv
+!results/intermediates/three_schedule_momentum/summary.json
 results/.cache/
 
 .DS_Store

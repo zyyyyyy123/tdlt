@@ -10,7 +10,7 @@ from pathlib import Path
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = PROJECT_DIR.parents[1]
-CODE_DIR = REPO_ROOT / "code"
+SCRIPT_DIR = Path(__file__).resolve().parent
 
 MPL_CACHE_DIR = PROJECT_DIR / "outputs" / ".matplotlib"
 XDG_CACHE_DIR = PROJECT_DIR / "outputs" / ".cache"
@@ -26,10 +26,10 @@ import numpy as np
 import pandas as pd
 from sklearn.exceptions import ConvergenceWarning
 
-if str(CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(CODE_DIR))
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
 
-from momentum_residual_mlp import (  # noqa: E402
+from run_legacy_momentum_residual_mlp import (  # noqa: E402
     RUN_ALIASES,
     build_feature_cache,
     fit_momentum_law,

@@ -5,7 +5,7 @@
   reasonableness, and robustness against simple placebo residual templates.
 - Process: implemented in `scripts/run_spline_stability_audit.py`. The script
   reads the three-schedule momentum table from
-  `results/momentum_residual_mlp_results/predictions.csv`, samples
+  `results/intermediates/three_schedule_momentum/predictions.csv`, samples
   `1000 <= step <= 33906` every 2 steps, fits residual splines on source
   schedules, and evaluates held-out schedules.
 - Protocol:
