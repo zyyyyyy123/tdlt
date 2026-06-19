@@ -409,6 +409,111 @@
   \end{block}
 \end{frame}
 
+\begin{frame}{Hypothesis Test I: Is the Spline Residual Real?}
+  \begin{block}{Test target}
+    For each WSD time window \(W\), compare paired absolute errors:
+    \[
+      d_t=|L_t-\widehat L_{\rm mom}(t)|-|L_t-\widehat L_{\rm spl}(t)|,
+      \qquad
+      \Delta_W=\frac{1}{|W|}\sum_{t\in W}d_t.
+    \]
+    \[
+      H_0:\Delta_W\le 0
+      \qquad\text{vs.}\qquad
+      H_1:\Delta_W>0.
+    \]
+  \end{block}
+
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Why block bootstrap}
+        Loss errors are strongly autocorrelated across adjacent steps, so ordinary i.i.d. bootstrap is too optimistic. We resample contiguous WSD time blocks of size \(128,512,2048\).
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{What would falsify it}
+        \begin{itemize}
+          \item \(q_{0.05}(\Delta_W)\le 0\) on key windows.
+          \item Reversed/shifted/permuted residual templates work equally well.
+          \item 811-selected spline rank does not match WSD rank.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Spline Robustness: Bootstrap and Placebo Controls}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.50\textwidth}
+      \begin{table}
+        \centering
+        \scriptsize
+        \begin{tabular}{lccc}
+          \toprule
+          WSD window & mean \(\Delta\) & q05, block 2048 & \(P(\Delta>0)\)\\
+          \midrule
+          full & 0.016843 & 0.010497 & 1.000\\
+          tail \(27126\)-\(33906\) & 0.016898 & 0.010157 & 1.000\\
+          last 2048 & 0.024261 & 0.024261 & 1.000\\
+          \bottomrule
+        \end{tabular}
+      \end{table}
+      \smallnote{Statistic: \(|e_{\rm momentum}|-|e_{\rm spline}|\). Positive means spline improves.}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{table}
+        \centering
+        \scriptsize
+        \begin{tabular}{lcc}
+          \toprule
+          residual template & full MAE & tail MAE\\
+          \midrule
+          true step spline & \textbf{0.020878} & \textbf{0.021855}\\
+          reversed residual & 0.049905 & 0.047814\\
+          circular shift & 0.050053 & 0.051580\\
+          block permutation & 0.050067 & 0.049095\\
+          sign flip & 0.067432 & 0.067303\\
+          \bottomrule
+        \end{tabular}
+      \end{table}
+      \smallnote{Placebo templates fail, so the effect is not arbitrary residual magnitude.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Spline Robustness: Selection and Parameter Stability}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.52\textwidth}
+      \begin{table}
+        \centering
+        \scriptsize
+        \begin{tabular}{lcccc}
+          \toprule
+          config & 811 MAE & WSD MAE & val rank & test rank\\
+          \midrule
+          \(s=0.01,\lambda=1\) & 0.016447 & \textbf{0.020878} & 1 & 1\\
+          \(s=0.05,\lambda=1\) & 0.017002 & 0.021281 & 3 & 3\\
+          \(s=0.10,\lambda=1\) & 0.017600 & 0.021741 & 5 & 5\\
+          \bottomrule
+        \end{tabular}
+      \end{table}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{Selection audit}
+        \begin{itemize}
+          \item Config is selected by 811, not WSD.
+          \item 811/WSD grid rank correlation:
+          \[
+            \rho_{\rm Spearman}=0.989,\quad r_{\rm Pearson}=0.997.
+          \]
+          \item Best \(s=0.01\) and conservative \(s=0.1\) differ by less than \(0.001\) WSD MAE.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \smallnote{Conclusion: report a stable spline family, not a claim that one smoothing constant is theoretically special.}
+\end{frame}
+
 \begin{frame}{From Spline to Event Leftover}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.48\textwidth}
@@ -546,6 +651,33 @@
   \end{block}
 \end{frame}
 
+\begin{frame}{Hypothesis Test II: Does Event Geometry Add Information?}
+  \begin{block}{Main hypothesis}
+    After fitting the step/spline residual, event-tail features carry additional schedule-local information:
+    \[
+      H_0:\ \mae(\widehat L_{\rm step+event})\ge \mae(\widehat L_{\rm step})
+      \qquad
+      H_1:\ \mae(\widehat L_{\rm step+event})<\mae(\widehat L_{\rm step}).
+    \]
+  \end{block}
+
+  \begin{table}
+    \centering
+    \scriptsize
+    \begin{tabular}{p{0.36\textwidth}p{0.36\textwidth}c}
+      \toprule
+      test & key numbers & verdict\\
+      \midrule
+      aligned WSD margin & full \(0.035007\to0.029644\); tail \(0.035694\to0.031012\) & supported\\
+      train on 811 only & full \(0.029869\to0.030152\) & not supported\\
+      train on cosine+811 & full \(0.031382\to0.029322\) & supported\\
+      endpoint guard & endpoint stays \(\approx0.03149\), full \(0.029716\) & mixed\\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+  \smallnote{This narrows the claim: the leftover is useful as a cosine/step-phase tail correction, not as a universal event model from any source schedule.}
+\end{frame}
+
 \begin{frame}{Stability Checks}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.53\textwidth}
@@ -577,6 +709,37 @@
   \end{columns}
 \end{frame}
 
+\begin{frame}{Event Leftover Robustness: Feature Families}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.52\textwidth}
+      \begin{table}
+        \centering
+        \scriptsize
+        \begin{tabular}{lcc}
+          \toprule
+          feature family & WSD full MAE & WSD tail MAE\\
+          \midrule
+          linear endpoint & \textbf{0.029644} & \textbf{0.031012}\\
+          drop impulse & 0.033357 & 0.037049\\
+          event-tail interactions & 0.034400 & 0.031355\\
+          event history & 0.082043 & 0.266411\\
+          full event-local & 0.085251 & 0.284405\\
+          \bottomrule
+        \end{tabular}
+      \end{table}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{Interpretation}
+        \begin{itemize}
+          \item The gain is driven by \texttt{linear\_endpoint}: decay progress, tail progress, endpoint pressure, remaining fraction.
+          \item Direct LR-drop impulse features are weaker.
+          \item High-dimensional event-history features overfit and transfer poorly.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
 \begin{frame}{Within-Curve Bootstrap Evidence}
   \begin{table}
     \centering
@@ -595,6 +758,31 @@
   \begin{block}{Interpretation}
     Bootstrap supports full/tail improvement within the WSD curve. It does not prove schedule-level significance because we only have three schedules.
   \end{block}
+\end{frame}
+
+\begin{frame}{No-Lookahead and Scope of Claims}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.49\textwidth}
+      \begin{block}{Leakage checks}
+        \begin{itemize}
+          \item WSD is not used for fitting or validation selection.
+          \item Full candidate grids store train/validation metrics only.
+          \item WSD test metrics are written only for selected configs.
+          \item Transfer table has no row with WSD inside the training schedule.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{block}{What the tests prove}
+        \begin{itemize}
+          \item Spline: robust within-curve improvement over momentum on WSD.
+          \item Event leftover: aligned tail geometry improves full/tail MAE over step reference.
+          \item Not proved: schedule-level statistical significance from only three schedules.
+          \item Not claimed: endpoint-loss improvement for the event leftover.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \begin{frame}{Overall Comparison}
