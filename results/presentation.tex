@@ -15,6 +15,7 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{xcolor}
+\usepackage{makecell}
 
 \pgfplotsset{compat=1.18}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc}
@@ -34,9 +35,9 @@
 \setbeamercolor{block body}{fg=black,bg=tdltLight}
 \setbeamercolor{alerted text}{fg=tdltRed}
 
-\newcommand{\MemberA}{Member 1}
-\newcommand{\MemberB}{Member 2}
-\newcommand{\MemberC}{Member 3}
+\newcommand{\MemberA}{占扬 / 2300010819}
+\newcommand{\MemberB}{唐锦琪 / 2300010628}
+\newcommand{\MemberC}{邓子钧 / 2200015833}
 \newcommand{\RepoURL}{\url{https://github.com/zyyyyyy123/tdlt}}
 
 \newcommand{\mae}{\mathrm{MAE}}
@@ -44,7 +45,14 @@
 \newcommand{\rTwo}{R^2}
 \newcommand{\loss}{\mathcal{L}}
 \newcommand{\lr}{\eta}
-\newcommand{\smallnote}[1]{{\scriptsize\color{tdltGray}#1}}
+\newcommand{\smallnote}[2][\linewidth]{%
+  \par\vspace{0.18em}%
+  \noindent\makebox[\linewidth][c]{%
+    \begin{minipage}{#1}
+      \centering{\scriptsize\color{tdltGray}#2}
+    \end{minipage}%
+  }%
+}
 
 \title[Task 2: Loss Curve Prediction]{Predicting LLM Pretraining Loss Curves\\from Learning-rate Schedules}
 \subtitle{Baseline-calibrated residual modeling for cross-schedule prediction}
@@ -52,7 +60,7 @@
 \institute{Topics in Deep Learning Theory, Spring 2026}
 \date{June 2026}
 \hypersetup{
-  pdfauthor={TDLT Final Group},
+  pdfauthor={占扬, 唐锦琪, 邓子钧},
   pdftitle={Predicting LLM Pretraining Loss Curves from Learning-rate Schedules},
   pdfsubject={Task 2 final presentation}
 }
@@ -103,12 +111,14 @@
 \end{frame}
 
 \begin{frame}{Problem: Learning-rate Schedule as a Functional Input}
-  Classical scaling laws often summarize a run by a final loss:
+  Classical scaling laws often summarize a run by a final loss
+  \cite{bi2024deepseek,hu2024minicpm,zhang2026configuration}:
   \[
     L_{\mathrm{final}} \approx aN^{-\alpha}+bD^{-\beta}+c,
   \]
   where \(N\) is model size and \(D\) is the number of training tokens.
-  Task 2 asks for a harder object: the whole trajectory under a schedule history,
+  Task 2 asks for a harder object: the whole trajectory under a schedule
+  history \cite{li2026functional,luo2025multi,tissue2026scaling},
   \[
     L_t = L_{\Theta}(\eta_{\le t}),\qquad
     \eta_{\le t}=(\eta_1,\eta_2,\ldots,\eta_t),\quad t=1,\ldots,T .
@@ -137,7 +147,8 @@
   \end{block}
 
   \begin{block}{3. Baselines must leave the right residual}
-    Momentum law and Multi-Power Law provide interpretable global structure.
+    Momentum law and Multi-Power Law provide interpretable global structure
+    \cite{luo2025multi,tissue2026scaling}.
     The key question is whether the remaining error has transferable phase and
     tail geometry, rather than schedule-specific noise.
   \end{block}
@@ -168,9 +179,9 @@
           {\sum_{t\in\mathcal T}(L_s(t)-\overline L_s)^2}.
         \]
       \end{block}
+      \smallnote{All reported WSD metrics use evaluation steps \(t\ge 1000\),\\ tail metrics are computed on the decay/tail window.}
     \end{column}
   \end{columns}
-  \smallnote{All reported WSD metrics use evaluation steps \(t\ge 1000\); tail metrics are computed on the decay/tail window.}
 \end{frame}
 
 \begin{frame}{Data, Split, and Metrics}
@@ -194,10 +205,94 @@
           \item Metrics: MAE, RMSE, \(R^2\), tail MAE, endpoint error.
         \end{itemize}
       \end{block}
+      \smallnote{This split matches Task 2: fit on cosine LRS and evaluate prediction performance on WSD LRS.}
     \end{column}
   \end{columns}
-  \vspace{0.4em}
-  \smallnote{This split matches Task 2: fit on cosine LRS and evaluate prediction performance on WSD LRS.}
+\end{frame}
+
+\begin{frame}{Data Cleaning: Dense Step Grid and Forward Fill}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.50\textwidth}
+      \begin{block}{Cleaning pipeline}
+        \begin{itemize}
+          \item Convert each raw run to required columns: step, loss, and learning rate.
+          \item Reindex every schedule to the dense grid \(0,\ldots,33907\), giving \(33908\) points per run.
+          \item Check duplicated steps and key-column NaNs before regenerating the cleaned pkl/csv files.
+          \item Use forward fill only for isolated missing steps: copied loss and LR from the previous step.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{table}
+        \centering
+        \scriptsize
+        \begin{tabular*}{0.92\linewidth}{@{\extracolsep{\fill}}lccc}
+          \toprule
+          schedule & missing step & copied from & fields\\
+          \midrule
+          \texttt{wsd\_rope} & 20815 & 20814 & loss, LR\\
+          \texttt{cosine\_rope} & 22493 & 22492 & loss, LR\\
+          \texttt{811\_rope} & none & -- & --\\
+          \bottomrule
+        \end{tabular*}
+      \end{table}
+      \begin{block}{Why ffill is appropriate here}
+        Only two isolated rows are inserted over \(3\times33908\) schedule-step
+        records. Forward fill preserves local continuity and avoids creating
+        artificial LR events by interpolation.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Autocorrelation Diagnosis}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.52\textwidth}
+      \begin{table}
+        \centering
+        \scriptsize
+        \begin{tabular*}{0.86\linewidth}{@{\extracolsep{\fill}}lccc}
+          \toprule
+          log-loss ACF & lag 1 & lag 512 & lag 2048\\
+          \midrule
+          cosine & 0.946 & 0.784 & 0.523\\
+          WSD & 0.939 & 0.758 & 0.465\\
+          8-1-1 & 0.941 & 0.767 & 0.482\\
+          \bottomrule
+        \end{tabular*}
+      \end{table}
+      \vspace{-0.2em}
+      \begin{table}
+        \centering
+        \scriptsize
+        \begin{tabular*}{0.86\linewidth}{@{\extracolsep{\fill}}lccc}
+          \toprule
+          rolling residual ACF & lag 1 & lag 512 & lag 2048\\
+          \midrule
+          cosine & 0.994 & 0.176 & 0.148\\
+          WSD & 0.999 & 0.852 & 0.640\\
+          8-1-1 & 1.000 & 0.921 & 0.667\\
+          \bottomrule
+        \end{tabular*}
+      \end{table}
+      \smallnote[0.86\linewidth]{Computed on steps \(t\ge1000\)}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{Diagnosis}
+        Adjacent loss values are not independent observations. Even after
+        momentum correction, the smoothed residual can remain strongly
+        autocorrelated, especially on WSD and 8-1-1 tail regions.
+      \end{block}
+      \begin{block}{Effect on evaluation}
+        \begin{itemize}
+          \item Do not use ordinary i.i.d. bootstrap over individual steps.
+          \item Use contiguous block bootstrap with block sizes \(128,512,2048\).
+          \item Treat bootstrap evidence as within-curve support, not
+          schedule-level statistical significance.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \begin{frame}{Schedule Geometry Is the Stress Test}
@@ -241,7 +336,7 @@
 
 \begin{frame}{Baseline 1: Momentum Law}
   Tissue et al. model the loss decrease from accumulated training progress and
-  an annealing-induced momentum term:
+  an annealing-induced momentum term \cite{tissue2026scaling}:
   \[
     \widehat L_{\rm mom}(t)=L_0+A S_1(t)^{-\alpha}-C S_2(t).
   \]
@@ -259,7 +354,8 @@
 \end{frame}
 
 \begin{frame}{Baseline 2: Multi-Power Law}
-  Luo et al. add an explicit response to individual LR-drop events:
+  Luo et al. add an explicit response to individual LR-drop events
+  \cite{luo2025multi}:
   \[
   \begin{aligned}
     \widehat L_{\rm MPL}(t)=&\ L_0+A S_1(t)^{-\alpha}\\
@@ -310,16 +406,16 @@
       \begin{table}
         \centering
         \scriptsize
-        \begin{tabular}{lccc}
+        \begin{tabular*}{0.92\linewidth}{@{\extracolsep{\fill}}lccc}
           \toprule
           eval schedule & MAE & \(R^2\) & endpoint abs.\\
           \midrule
           cosine & 0.032224 & 0.953201 & 0.025074\\
           WSD & 0.037844 & 0.925669 & 0.022260\\
           \bottomrule
-        \end{tabular}
+        \end{tabular*}
       \end{table}
-      \smallnote{Fit on cosine using Huber loss in log space; evaluation uses steps \(t\ge1000\).}
+      \smallnote[0.92\linewidth]{Fit on cosine using Huber loss in log space,\\ evaluation uses steps \(t\ge1000\).}
     \end{column}
     \begin{column}{0.44\textwidth}
       \begin{block}{What it establishes}
@@ -337,16 +433,16 @@
       \begin{table}
         \centering
         \scriptsize
-        \begin{tabular}{lccc}
+        \begin{tabular*}{0.92\linewidth}{@{\extracolsep{\fill}}lccc}
           \toprule
           WSD model & MAE & \(R^2\) & endpoint abs.\\
           \midrule
           sampled momentum & 0.037216 & 0.928180 & 0.045104\\
           MPL reproduction & \textbf{0.036027} & \textbf{0.935676} & 0.134094\\
           \bottomrule
-        \end{tabular}
+        \end{tabular*}
       \end{table}
-      \smallnote{The MPL reproduction uses sampled points and reduced training steps; it is treated as a reproduced baseline for this dataset.}
+      \smallnote[0.92\linewidth]{The MPL reproduction uses sampled points and reduced training steps; it is treated as a reproduced baseline for this dataset.}
     \end{column}
     \begin{column}{0.44\textwidth}
       \begin{block}{What it adds}
@@ -363,8 +459,10 @@
 \begin{frame}{From Baselines to Residual Modeling}
   \begin{block}{Baseline laws are necessary but not sufficient}
     \begin{itemize}
-      \item Momentum law gives a stable physics-inspired global trend.
-      \item Multi-Power Law tests the value of explicit decay-event response.
+      \item Momentum law gives a stable physics-inspired global trend
+      \cite{tissue2026scaling}.
+      \item Multi-Power Law tests the value of explicit decay-event response
+      \cite{luo2025multi}.
       \item Both leave enough WSD structure to justify a residual-first method.
     \end{itemize}
   \end{block}
@@ -427,7 +525,7 @@
       \bottomrule
     \end{tabularx}
   \end{table}
-  \smallnote{These ablations motivate a low-dimensional residual model instead of direct high-dimensional schedule-feature regression.}
+  \smallnote[0.98\textwidth]{These ablations motivate a low-dimensional residual model instead of direct high-dimensional schedule-feature regression.}
 \end{frame}
 
 \begin{frame}{Method Pipeline}
@@ -481,10 +579,16 @@
       \(\gamma\) is a shrinkage coefficient, and \(c\) bounds the residual magnitude.
     \end{column}
     \begin{column}{0.44\textwidth}
-      \includegraphics[width=\textwidth]{zijun/method_development/figures/momentum_residual_spline_full.png}
-      \smallnote{Visual diagnostic: momentum baseline and smooth residual correction on cosine/WSD sampled trajectories.}
+      \includegraphics[width=\textwidth]{figures/momentum_residual_spline_contrast.png}
+      \smallnote{Top: loss trajectory with the baseline-to-spline gap shaded. Bottom: absolute-error reduction; positive blue area means the spline correction is closer to the raw loss.}
     \end{column}
   \end{columns}
+\end{frame}
+
+\begin{frame}{Where the Spline Helps: Head and Tail}
+  \centering
+  \includegraphics[width=0.94\textwidth,height=0.73\textheight,keepaspectratio]{figures/momentum_residual_spline_edge_zoom.png}
+  \smallnote[0.94\textwidth]{Local zooms: the spline gain is concentrated in the early transient and late WSD decay windows. Shaded bands show the baseline-to-spline gap.}
 \end{frame}
 
 \begin{frame}{Step Spline Result and Mechanism}
@@ -493,7 +597,7 @@
       \begin{table}
         \centering
         \scriptsize
-        \begin{tabular}{lccc}
+        \begin{tabular*}{0.96\linewidth}{@{\extracolsep{\fill}}lccc}
           \toprule
           WSD sampled model & MAE & RMSE & \(R^2\)\\
           \midrule
@@ -501,15 +605,15 @@
           mean shift & 0.036862 & 0.046243 & 0.929493\\
           spline \(s=0.1\) & \textbf{0.020657} & \textbf{0.024735} & \textbf{0.979827}\\
           \bottomrule
-        \end{tabular}
+        \end{tabular*}
       \end{table}
-      \smallnote{Cosine-fitted residual spline transferred to WSD.}
+      \smallnote[0.96\linewidth]{Cosine-fitted residual spline transferred to WSD.}
     \end{column}
     \begin{column}{0.49\textwidth}
       \begin{table}
         \centering
         \scriptsize
-        \begin{tabular}{lcc}
+        \begin{tabular*}{0.74\linewidth}{@{\extracolsep{\fill}}lcc}
           \toprule
           coordinate & residual corr. & WSD MAE\\
           \midrule
@@ -517,36 +621,71 @@
           raw \(S_1\) & -0.123 & 0.045414\\
           \(S_1\) ratio & -0.008 & 0.039812\\
           \bottomrule
-        \end{tabular}
+        \end{tabular*}
       \end{table}
-      \smallnote{After momentum correction, residual phase is step-aligned rather than \(S_1\)-aligned.}
+      \smallnote[0.74\linewidth]{After momentum correction, residual phase is step-aligned rather than \(S_1\)-aligned.}
     \end{column}
   \end{columns}
 \end{frame}
 
-\begin{frame}{Step Spline Robustness}
+\begin{frame}{Hypothesis Test I: Is the Spline Residual Real?}
+  \begin{block}{Test target}
+    For each WSD time window \(W\), compare paired absolute errors:
+    \[
+      d_t=|L_t-\widehat L_{\rm mom}(t)|-|L_t-\widehat L_{\rm spl}(t)|,
+      \qquad
+      \Delta_W=\frac{1}{|W|}\sum_{t\in W}d_t.
+    \]
+    \[
+      H_0:\Delta_W\le 0
+      \qquad\text{vs.}\qquad
+      H_1:\Delta_W>0.
+    \]
+  \end{block}
+
   \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.49\textwidth}
-      \begin{block}{Block-resampled improvement}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Why block bootstrap}
+        Loss errors are strongly autocorrelated across adjacent steps, so ordinary i.i.d. bootstrap is too optimistic. We resample contiguous WSD time blocks of size \(128,512,2048\).
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{What would falsify it}
+        \begin{itemize}
+          \item \(q_{0.05}(\Delta_W)\le 0\) on key windows.
+          \item Reversed/shifted/permuted residual templates work equally well.
+          \item 811-selected spline rank does not match WSD rank.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Spline Robustness: Bootstrap and Placebo Controls}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.50\textwidth}
+      \begin{table}
+        \centering
         \scriptsize
-        \begin{tabular}{lccc}
+        \begin{tabular*}{0.96\linewidth}{@{\extracolsep{\fill}}lccc}
           \toprule
-          WSD window & mean \(\Delta\) & q05 & \(P(\Delta>0)\)\\
+          WSD window & mean \(\Delta\) & q05, block 2048 & \(P(\Delta>0)\)\\
           \midrule
           full & 0.016843 & 0.010497 & 1.000\\
-          tail & 0.016898 & 0.010157 & 1.000\\
+          tail \(27126\)-\(33906\) & 0.016898 & 0.010157 & 1.000\\
           last 2048 & 0.024261 & 0.024261 & 1.000\\
           \bottomrule
-        \end{tabular}
-      \end{block}
-      \smallnote{\(\Delta=|e_{\rm mom}|-|e_{\rm spline}|\); positive values mean the spline reduces absolute error.}
+        \end{tabular*}
+      \end{table}
+      \smallnote[0.96\linewidth]{Statistic: \(|e_{\rm momentum}|-|e_{\rm spline}|\). Positive means spline improves.}
     \end{column}
-    \begin{column}{0.49\textwidth}
-      \begin{block}{Residual-template controls}
+    \begin{column}{0.48\textwidth}
+      \begin{table}
+        \centering
         \scriptsize
-        \begin{tabular}{lcc}
+        \begin{tabular*}{0.78\linewidth}{@{\extracolsep{\fill}}lcc}
           \toprule
-          template & full MAE & tail MAE\\
+          residual template & full MAE & tail MAE\\
           \midrule
           true step spline & \textbf{0.020878} & \textbf{0.021855}\\
           reversed residual & 0.049905 & 0.047814\\
@@ -554,45 +693,50 @@
           block permutation & 0.050067 & 0.049095\\
           sign flip & 0.067432 & 0.067303\\
           \bottomrule
-        \end{tabular}
-      \end{block}
-      \smallnote{Misaligned templates fail, so the gain is tied to residual phase rather than residual magnitude alone.}
+        \end{tabular*}
+      \end{table}
+      \smallnote[0.78\linewidth]{Placebo templates fail, so the effect is not arbitrary residual magnitude.}
     \end{column}
   \end{columns}
 \end{frame}
 
-\begin{frame}{Validation Stability of the Step Residual}
+\begin{frame}{Spline Robustness: Selection and Parameter Stability}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.52\textwidth}
       \begin{table}
         \centering
-        \tiny
+        \scriptsize
         \begin{tabular}{lcccc}
           \toprule
-          config & 8-1-1 MAE & WSD MAE & val rank & test rank\\
+          config & 811 MAE & WSD MAE & val rank & test rank\\
           \midrule
-          \(s=0.01,\lambda=1\) & 0.016447 & 0.020878 & 1 & 1\\
+          \(s=0.01,\lambda=1\) & 0.016447 & \textbf{0.020878} & 1 & 1\\
           \(s=0.05,\lambda=1\) & 0.017002 & 0.021281 & 3 & 3\\
           \(s=0.10,\lambda=1\) & 0.017600 & 0.021741 & 5 & 5\\
           \bottomrule
         \end{tabular}
       \end{table}
     \end{column}
-    \begin{column}{0.44\textwidth}
-      \begin{block}{Selection evidence}
-        The 8-1-1 validation ranking closely matches the WSD ranking
-        (\(\rho_{\rm Spearman}=0.989\), \(r_{\rm Pearson}=0.997\)).
-        The best and conservative spline settings differ by less than
-        \(0.001\) WSD MAE.
+    \begin{column}{0.46\textwidth}
+      \begin{block}{Selection audit}
+        \begin{itemize}
+          \item Config is selected by 811, not WSD.
+          \item 811/WSD grid rank correlation:
+          \[
+            \rho_{\rm Spearman}=0.989,\quad r_{\rm Pearson}=0.997.
+          \]
+          \item Best \(s=0.01\) and conservative \(s=0.1\) differ by less than \(0.001\) WSD MAE.
+        \end{itemize}
       \end{block}
+      \smallnote{Conclusion: report a stable spline family, not a claim that one smoothing constant is theoretically special.}
     \end{column}
   \end{columns}
-  \smallnote{The evidence supports reporting a stable step-residual family, not a fragile single setting.}
 \end{frame}
 
 \begin{frame}{Method II: Event/Tail Leftover}
-  The step template leaves a small but systematic tail leftover. We fit a
-  ridge correction \(h_\beta(z_t)\) on cosine leftover features:
+  Motivated by Su Jianlin's sliding-average view of weight decay and
+  learning-rate schedules \cite{kexuefm-11459}, we model the step
+  template's tail leftover with a schedule-history proxy:
   \[
     \ell_{\rm cos}(t)=r_{\rm cos}(t)-g^*(t),\qquad
     h_\beta(z_t)=\beta_0+\beta^\top\mathrm{standardize}(z_t),
@@ -615,8 +759,23 @@
         proxy for tail geometry; optimizer EMA, weight decay state, weight RMS,
         and update RMS are not observed in the provided data.
       \end{alertblock}
+      \smallnote{The endpoint/tail coordinates also follow the linear-decay
+      endpoint-loss motivation in \cite{kexuefm-11494}; we use only LR-derived
+      proxies because optimizer states are unobserved.}
     \end{column}
   \end{columns}
+\end{frame}
+
+\begin{frame}{Event/Tail Leftover: Incremental Gain}
+  \centering
+  \includegraphics[width=0.94\textwidth,height=0.73\textheight,keepaspectratio]{figures/step_plus_event_leftover_contrast.png}
+  \smallnote[0.94\textwidth]{The advanced correction is evaluated relative to the step reference. Positive teal area means the event/tail leftover reduces absolute prediction error beyond the spline-only model.}
+\end{frame}
+
+\begin{frame}{Where Event/Tail Helps: Mid and Tail}
+  \centering
+  \includegraphics[width=0.94\textwidth,height=0.73\textheight,keepaspectratio]{figures/step_plus_event_leftover_edge_zoom.png}
+  \smallnote[0.94\textwidth]{The gain is localized after the early transient: mid/pre-tail structure improves by 27\%, and WSD decay/tail improves by 13\% over the step reference.}
 \end{frame}
 
 \begin{frame}{Event/Tail Feature Evidence}
@@ -717,15 +876,97 @@
         \]
         Pure step reference remains better for endpoint behavior.
       \end{alertblock}
+      \smallnote{The final claim is therefore about full-curve accuracy.}
     \end{column}
   \end{columns}
-  \vspace{0.3em}
-  \smallnote{The final claim is therefore about full-curve accuracy, not endpoint optimality.}
 \end{frame}
 
-\begin{frame}{Binned Robustness and Ablation}
+\begin{frame}{Hypothesis Test II: Does Event Geometry Add Information?}
+  \begin{block}{Main hypothesis}
+    After fitting the step/spline residual, event-tail features carry additional schedule-local information:
+    \[
+      H_0:\ \mae(\widehat L_{\rm step+event})\ge \mae(\widehat L_{\rm step})
+      \qquad
+      H_1:\ \mae(\widehat L_{\rm step+event})<\mae(\widehat L_{\rm step}).
+    \]
+  \end{block}
+
+  \begin{table}
+    \centering
+    \scriptsize
+    \begin{tabular}{ccc}
+      \toprule
+      test & key numbers & verdict\\
+      \midrule
+      aligned WSD margin & \makecell{full \(0.035007\to0.029644\)\\ tail \(0.035694\to0.031012\)} & supported\\
+      train on 811 only & full \(0.029869\to0.030152\) & not supported\\
+      train on cosine+811 & full \(0.031382\to0.029322\) & supported\\
+      endpoint guard & \makecell{endpoint stays \(\approx0.03149\)\\ full \(0.029716\)} & mixed\\
+      \bottomrule
+    \end{tabular}
+    \smallnote[0.90\textwidth]{This narrows the claim: the leftover is useful as a cosine/step-phase tail correction, not as a universal event model from any source schedule.}
+  \end{table}
+\end{frame}
+
+\begin{frame}{Event Leftover Robustness: Feature Families}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.52\textwidth}
+      \begin{table}
+        \centering
+        \scriptsize
+        \begin{tabular}{lcc}
+          \toprule
+          feature family & WSD full MAE & WSD tail MAE\\
+          \midrule
+          linear endpoint & \textbf{0.029644} & \textbf{0.031012}\\
+          drop impulse & 0.033357 & 0.037049\\
+          event-tail interactions & 0.034400 & 0.031355\\
+          event history & 0.082043 & 0.266411\\
+          full event-local & 0.085251 & 0.284405\\
+          \bottomrule
+        \end{tabular}
+      \end{table}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{Interpretation}
+        \begin{itemize}
+          \item The gain is driven by \texttt{linear\_endpoint}: decay progress, tail progress, endpoint pressure, remaining fraction.
+          \item Direct LR-drop impulse features are weaker.
+          \item High-dimensional event-history features overfit and transfer poorly.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{No-Lookahead and Scope of Claims}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.49\textwidth}
+      \begin{block}{Leakage checks}
+        \begin{itemize}
+          \item WSD is not used for fitting or validation selection.
+          \item Full candidate grids store train/validation metrics only.
+          \item WSD test metrics are written only for selected configs.
+          \item Transfer table has no row with WSD inside the training schedule.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{block}{What the tests prove}
+        \begin{itemize}
+          \item Spline: robust within-curve improvement over momentum on WSD.
+          \item Event leftover: aligned tail geometry improves full/tail MAE over step reference.
+          \item Not proved: schedule-level statistical significance from only three schedules.
+          \item Not claimed: endpoint-loss improvement for the event leftover.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Event Leftover: Robustness Summary}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.50\textwidth}
       \begin{table}
         \centering
         \scriptsize
@@ -736,93 +977,33 @@
           step reference & 0.035007 & 0.035694\\
           aligned leftover & \textbf{0.029644} & \textbf{0.031012}\\
           zero event control & 0.035032 & 0.035836\\
-          shifted event control & 0.035132 & 0.036998\\
+          shifted control & 0.035132 & 0.036998\\
           reverse-time control & 0.038455 & 0.036350\\
           \bottomrule
         \end{tabular}
       \end{table}
     \end{column}
-    \begin{column}{0.44\textwidth}
-      \begin{block}{Interpretation}
-        \begin{itemize}
-          \item Aligned event/tail features improve over the step reference.
-          \item Zero, shifted, and reversed controls lose the improvement.
-          \item The binned experiment is a robustness check; the main metric is the full-resolution WSD result.
-        \end{itemize}
-      \end{block}
-    \end{column}
-  \end{columns}
-\end{frame}
-
-\begin{frame}{Within-WSD Bootstrap Evidence}
-  \begin{table}
-    \centering
-    \scriptsize
-    \begin{tabular}{lcccc}
-      \toprule
-      window & mean MAE improvement & q05 & q95 & prob. positive\\
-      \midrule
-      full & 0.005363 & 0.003307 & 0.009138 & 1.000\\
-      tail \(27126\)-\(33906\) & 0.004682 & 0.001656 & 0.006967 & 1.000\\
-      last 512 & \(-0.000188\) & \(-0.000487\) & \(-0.000090\) & 0.000\\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-  \begin{block}{Interpretation}
-    Bootstrap supports the full/tail gain within the WSD curve. It does not
-    prove schedule-level significance because the independent schedule count is three.
-  \end{block}
-\end{frame}
-
-\begin{frame}{Overall Method Comparison}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.52\textwidth}
+    \begin{column}{0.48\textwidth}
       \begin{table}
         \centering
         \scriptsize
-        \begin{tabular}{lcc}
+        \begin{tabular*}{0.82\linewidth}{@{\extracolsep{\fill}}lccc}
           \toprule
-          model family & WSD MAE & WSD \(R^2\)\\
+          WSD window & mean gain & q05 & \(P{>}0\)\\
           \midrule
-          Momentum law & 0.037844 & 0.925669\\
-          Multi-Power Law & 0.036027 & 0.935676\\
-          residual spline & 0.020657 & 0.979827\\
-          step reference & 0.021281 & 0.978375\\
-          step + event leftover & \textbf{0.011191} & \textbf{0.993410}\\
+          full & 0.005363 & 0.003307 & 1.000\\
+          tail & 0.004682 & 0.001656 & 1.000\\
+          last 512 & -0.000188 & -0.000487 & 0.000\\
           \bottomrule
-        \end{tabular}
+        \end{tabular*}
       \end{table}
-    \end{column}
-    \begin{column}{0.44\textwidth}
-      \begin{tikzpicture}
-        \begin{axis}[
-          ybar,
-          width=\textwidth,
-          height=4.8cm,
-          ymin=0,
-          ymax=0.042,
-          ylabel={WSD full MAE},
-          symbolic x coords={Mom,MPL,Spline,Step,Step+E},
-          xtick=data,
-          bar width=11pt,
-          enlarge x limits=0.14,
-          ymajorgrids=true,
-          grid style={draw=tdltLight},
-          tick label style={font=\scriptsize},
-          label style={font=\scriptsize},
-        ]
-          \addplot[fill=tdltBlue!70,draw=tdltBlue] coordinates {
-            (Mom,0.037844)
-            (MPL,0.036027)
-            (Spline,0.020657)
-            (Step,0.021281)
-            (Step+E,0.011191)
-          };
-        \end{axis}
-      \end{tikzpicture}
+      \smallnote[0.82\linewidth]{Bootstrap evidence is within-curve support, not schedule-level significance.}
+      \begin{block}{Takeaway}
+        Aligned event/tail geometry gives full and tail gains; shifted or
+        reversed controls fail. The endpoint remains a separate objective.
+      \end{block}
     \end{column}
   \end{columns}
-  \smallnote{Some rows use slightly different sampling/reporting contexts; the main comparison follows the cosine-fit, 8-1-1-validation, WSD-test protocol.}
 \end{frame}
 
 \begin{frame}{Empirical Findings}
@@ -885,7 +1066,8 @@
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.32\textwidth}
       \begin{block}{1. Reproduce}
-        Momentum law and Multi-Power Law provide LRS-aware baselines.
+        Momentum law and Multi-Power Law provide LRS-aware baselines
+        \cite{luo2025multi,tissue2026scaling}.
       \end{block}
     \end{column}
     \begin{column}{0.32\textwidth}
@@ -920,7 +1102,6 @@
       \bottomrule
     \end{tabularx}
   \end{table}
-  \smallnote{Local environment used during experiments: \texttt{conda activate tdlt}.}
 \end{frame}
 
 \begin{frame}{Division of Labor}
@@ -939,32 +1120,10 @@
   \end{table}
 \end{frame}
 
-\begin{frame}{References}
-  \scriptsize
-  \begin{thebibliography}{9}
-    \bibitem{tissue2024}
-    Tissue et al. (2024).
-    \newblock Scaling law with learning rate annealing.
-    \newblock arXiv:2408.11029.
-
-    \bibitem{luo2024}
-    Luo et al. (2024).
-    \newblock A multi-power law for loss curve prediction across learning rate schedules.
-    \newblock NeurIPS 2024 Workshop on Mathematics of Modern Machine Learning.
-
-    \bibitem{li2025}
-    Li et al. (2025).
-    \newblock Functional scaling laws in kernel regression: loss dynamics and learning rate schedules.
-    \newblock arXiv preprint.
-
-    \bibitem{hu2024}
-    Hu et al. (2024).
-    \newblock Warmup-stable-decay learning-rate schedules.
-
-    \bibitem{bi2024}
-    Bi et al. (2024).
-    \newblock Multi-step learning-rate schedules for LLM pretraining.
-  \end{thebibliography}
+\begin{frame}[allowframebreaks]{References}
+  \tiny
+  \bibliographystyle{plain}
+  \bibliography{results/references}
 \end{frame}
 
 \end{document}
