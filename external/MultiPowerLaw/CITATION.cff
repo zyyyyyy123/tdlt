@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it using the following metadata."
+authors:
+  - given-names: "Kairong"
+    family-names: "Luo"
+  - given-names: "Haodong"
+    family-names: "Wen"
+  - given-names: "Shengding"
+    family-names: "Hu"
+  - given-names: "Zhenbo"
+    family-names: "Sun"
+  - given-names: "Zhiyuan"
+    family-names: "Liu"
+  - given-names: "Maosong"
+    family-names: "Sun"
+  - given-names: "Kaifeng"
+    family-names: "Lyu"
+  - given-names: "Wenguang"
+    family-names: "Chen"
+title: "A Multi-Power Law for Loss Curve Prediction Across Learning Rate Schedules"
+date-released: "2025-03-17"  # Maps to year={2025}, month={mar}
+identifiers:
+  - type: "arxiv"
+    value: "2503.12811"
+    description: "arXiv preprint, category cs.LG"  # For primaryClass
+url: "https://arxiv.org/abs/2503.12811"  # Primary URL for the article
+license: "MIT"  # Optional, kept for metadata completeness
+repository-code: "https://github.com/thu-yao-01-luo/MultiPowerLaw/"  # Optional, kept but deprioritized
+keywords:
+  - "learning rate schedules"
+  - "loss curve prediction"
+  - "machine learning optimization"
+  - "large language models"
+  - "cs.LG"

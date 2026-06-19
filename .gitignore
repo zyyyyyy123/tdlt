@@ -1,20 +1,24 @@
 tmp*
 __pycache__*
 .vscode*
-test*
+/test*/
 results/*/*/metrics.csv
 results/*/*/predictions.csv
+results/baselines/*/metrics.csv
+results/baselines/*/predictions.csv
+results/baselines/*/training_history.csv
+results/.cache/
 
 .DS_Store
 __pycache__/
 *.py[cod]
-zijun/method_development/outputs/.cache/
-zijun/method_development/outputs/.matplotlib/
-zijun/method_development/outputs/*_predictions.csv
-!zijun/method_development/outputs/key_momentum_residual_predictions.csv
-!zijun/method_development/outputs/key_momentum_residual_roll5_predictions.csv
-zijun/method_development/baseline_results/*_predictions.csv
-zijun/method_development/baseline_results/**/predictions.csv
-zijun/method_development/baseline_results/**/*.png
+experiments/residual_methods/outputs/.cache/
+experiments/residual_methods/outputs/.matplotlib/
+experiments/residual_methods/outputs/*_predictions.csv
+!experiments/residual_methods/outputs/key_momentum_residual_predictions.csv
+!experiments/residual_methods/outputs/key_momentum_residual_roll5_predictions.csv
+experiments/residual_methods/baseline_results/*_predictions.csv
+experiments/residual_methods/baseline_results/**/predictions.csv
+experiments/residual_methods/baseline_results/**/*.png
 
 zhanyang/

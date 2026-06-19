@@ -1,200 +1,167 @@
-﻿# 深度学习理论选讲 final
+# TDLT Task 2: Loss-Curve Prediction from Learning-Rate Schedules
 
-本仓库用于整理课程 final 作业相关材料，包括题目说明、参考文献、loss curve 数据，以及两个参考实现方向的代码。
+本仓库对应课程 Task 2：在 cosine 学习率曲线上拟合，并预测 held-out WSD 学习率曲线下的 LLM pretraining loss curve。最终报告见 `results/presentation/slide.pdf`。
 
-## 目录结构
+## Project Layout
 
 ```text
 .
-├── .gitignore
-├── final.pdf
-├── README.md
-├── code/
-│   ├── requirements.txt
-│   ├── momentum.py
-│   ├── reproduction_momentum.py
-│   ├── reproduction_multi-power_law/
-│   │   ├── check.py
-│   │   └── main.py
-│   └── MultiPowerLaw/
-│       ├── main.py
-│       ├── requirements.txt
-│       ├── src/
-│       ├── tests/
-│       └── optimized_schedules/
-├── zijun/
-│   └── method_development/
-├── loss curves/
-│   ├── gpt_loss+lrs.pkl
-│   ├── gpt_loss+lrs.csv
-│   ├── gpt_loss_lrs_all_runs.xlsx
-│   ├── pkl_to_csv.py
-│   └── Readme.txt
+├── data/
+│   └── raw/                         # 课程给定 loss/lr 曲线和清洗脚本
+├── scripts/                         # 老师复现实验时优先运行这里
+│   ├── reproduce_report_results.py   # 一键重跑报告主线结果
+│   ├── verify_report_metrics.py      # 校验重跑指标是否对齐报告数值
+│   ├── reproduce_momentum.py         # Tissue et al. momentum-law baseline
+│   ├── reproduce_multi_power_law.py  # Luo et al. Multi-Power Law baseline
+│   └── train_momentum_residual_mlp.py
+├── experiments/
+│   └── residual_methods/             # residual spline 和 event/tail leftover 实验
 ├── results/
-│   └── reproduction/
-│       ├── momentum/
-│       │   ├── summary.json
-│       │   ├── metrics.csv
-│       │   ├── predictions.csv
-│       │   └── momentum_fit_prediction.png
-│       └── multi_power_law/
-│           ├── summary.json
-│           ├── metrics.csv
-│           ├── predictions.csv
-│           ├── training_history.csv
-│           ├── mpl_fit_prediction.png
-│           └── loss_monitor.png
-└── reference/
-    ├── A multi-power law for loss curve prediction across learning rate schedules.pdf
-    ├── Configuration-to-Performance Scaling Law with Neural Ansatz.pdf
-    ├── Functional Scaling Laws in Kernel Regression Loss Dynamics and Learning Rate Schedules.pdf
-    └── Scaling law with learning rate.pdf
+│   ├── baselines/                    # baseline 复现输出
+│   ├── diagnostics/                  # 辅助诊断结果
+│   └── presentation/                 # slide.tex, slide.pdf, references.bib, figures/
+├── src/
+│   └── baselines/                    # baseline 参考实现代码
+├── docs/
+│   ├── assignment/                   # 课程说明文件
+│   ├── literature/                   # 参考论文
+│   └── research_notes/               # 文献和实验过程笔记
+└── external/
+    └── MultiPowerLaw/                # vendored external reference implementation
 ```
 
-## 文件说明
+## Environment
 
-### `final.pdf`
-
-课程 final 作业说明文件。
-
-### `reference/`
-
-作业相关参考文献。当前包含 learning rate schedule、loss curve prediction、scaling law 等方向的论文材料。
-
-### `loss curves/`
-
-包含作业给定的 loss curve 数据和辅助查看脚本。
-
-- `gpt_loss+lrs.pkl`：原始数据文件，使用 `pandas.read_pickle()` 读取。
-- `gpt_loss+lrs.csv`：由 `gpt_loss+lrs.pkl` 转换得到的 CSV 文件，便于用表格工具或文本工具快速检查。
-- `gpt_loss_lrs_all_runs.xlsx`：已转换出的表格版本，便于直接查看。
-- `pkl_to_csv.py`：将 `gpt_loss+lrs.pkl` 转换为 `gpt_loss+lrs.csv` 的辅助脚本。
-- `Readme.txt`：原始数据目录中的说明文件。
-
-`gpt_loss+lrs.pkl` 顶层是一个 `dict`，包含 3 条训练曲线。每条曲线是一个 `DataFrame`，列为：
-
-```text
-step
-Metrics/loss
-lr
-```
-
-3 条曲线分别对应：
-
-```text
-M:100M_gpt_D:20B_scheduler:811_rope
-M:100M_gpt_D:20B_scheduler:wsd_rope
-M:100M_gpt_D:20B_scheduler:cosine_rope
-```
-
-### `code/`
-
-代码目录。
-
-- `requirements.txt`：当前代码需要的 Python 依赖。
-- `momentum.py`：参考 `Scaling law with learning rate` 的基础实现代码，当前主要作为参考代码保留。
-- `MultiPowerLaw/`：参考 `A multi-power law for loss curve prediction across learning rate schedules` 的实现代码和结果文件。
-- `reproduction_multi-power_law/`: 论文 `A multi-power law for loss curve prediction across learning rate schedules` 的复现代码。
-
-### `zijun/method_development/`
-
-邓子钧的个人方法开发目录。该目录默认假设两个 baseline 复现结果已经完成，后续主要放新的 fitting / prediction 方法、实验入口、对比指标和图表。
-
-## 环境配置
-
-建议使用 conda 创建独立环境。当前仓库已在 Python 3.11 下验证：
+Python 3.11 is recommended.
 
 ```bash
-conda create -n tdlt python=3.11
-conda activate tdlt
-pip install -r code/requirements.txt
+pip install -r requirements.txt
 ```
 
-`code/requirements.txt` 当前包含：
+## One-Command Reproduction
 
-```text
-numpy
-torch
-scipy
-matplotlib
-tqdm
-scikit-learn
-pandas
-```
-
-## 复现实验运行说明
-
-### Momentum reproduction
-
-运行 learning-rate momentum：
+From the repository root:
 
 ```bash
-python code/reproduction_momentum.py
+python scripts/reproduce_report_results.py --device cpu
 ```
 
-默认会读取：
+This reruns the report mainline in order:
 
-```text
-loss curves/gpt_loss+lrs.pkl
-```
+1. Momentum-law baseline.
+2. Multi-Power Law baseline.
+3. Step-aligned residual spline.
+4. 8-1-1-selected spline metrics used in the report checker.
+5. Sujianlin-inspired event/tail leftover selected metrics.
+6. Metric verification against the report headline numbers.
 
-并将结果输出到：
-
-```text
-results/reproduction/momentum/
-```
-
-主要输出文件包括：
-
-```text
-results/reproduction/momentum/summary.json
-results/reproduction/momentum/metrics.csv
-results/reproduction/momentum/predictions.csv
-results/reproduction/momentum/momentum_fit_prediction.png
-```
-
-### Multi-Power Law reproduction
-
-运行 `A multi-power law for loss curve prediction across learning rate schedules` 的复现实验：
+The default command regenerates the selected report tables, not every
+bootstrap/placebo/LOSO robustness grid. To rerun those heavier audits too:
 
 ```bash
-python code/reproduction_multi-power_law/main.py --device cuda
+python scripts/reproduce_report_results.py --device cpu --full-audit
 ```
 
-默认设置为：
-
-- 读取 `loss curves/gpt_loss+lrs.pkl`
-- 在 `cosine` loss curve 上拟合 Multi-Power Law 参数
-- 在 `cosine` 和 `wsd` loss curve 上评估
-- 读取 `results/reproduction/momentum/summary.json`，并在输出中给出和 momentum baseline 的指标对比
-
-结果会输出到：
-
-```text
-results/reproduction/multi_power_law/
-```
-
-主要输出文件包括：
-
-```text
-results/reproduction/multi_power_law/summary.json
-results/reproduction/multi_power_law/metrics.csv
-results/reproduction/multi_power_law/predictions.csv
-results/reproduction/multi_power_law/training_history.csv
-results/reproduction/multi_power_law/mpl_fit_prediction.png
-results/reproduction/multi_power_law/loss_monitor.png
-```
-
-如果希望避免覆盖已有结果，可以指定新的输出目录：
+The event/tail scripts read the included three-schedule momentum/MLP baseline table in `results/baselines/momentum_residual_mlp/predictions.csv`. To regenerate that intermediate table as well:
 
 ```bash
-python code/reproduction_multi-power_law/main.py \
-  --device cuda \
-  --output-dir results/reproduction/multi_power_law_test
+python scripts/reproduce_report_results.py --device cpu --refresh-mlp-input
 ```
 
-如果没有可用 GPU，也可以使用 CPU 运行：
+If compute time is tight, skip the Multi-Power Law rerun and verify the rest:
 
 ```bash
-python code/reproduction_multi-power_law/main.py --device cpu
+python scripts/reproduce_report_results.py --skip-mpl
+```
+
+The final line should be:
+
+```text
+All report headline metrics match expected values.
+```
+
+## Individual Commands
+
+Momentum law:
+
+```bash
+python scripts/reproduce_momentum.py
+```
+
+Output:
+
+```text
+results/baselines/momentum/
+```
+
+Multi-Power Law:
+
+```bash
+python scripts/reproduce_multi_power_law.py --device cpu
+```
+
+Output:
+
+```text
+results/baselines/multi_power_law/
+```
+
+Residual spline:
+
+```bash
+python experiments/residual_methods/scripts/run_momentum_residual_spline.py
+python experiments/residual_methods/scripts/run_spline_stability_audit.py --selected-only
+```
+
+Step + event/tail leftover:
+
+```bash
+python experiments/residual_methods/scripts/run_sujianlin_event_decay_ablation.py --selected-only
+```
+
+Full robustness audits:
+
+```bash
+python experiments/residual_methods/scripts/run_spline_stability_audit.py
+python experiments/residual_methods/scripts/run_sujianlin_event_decay_ablation.py
+python experiments/residual_methods/scripts/run_step_plus_event_leftover_stability_audit.py
+```
+
+Verify report numbers:
+
+```bash
+python scripts/verify_report_metrics.py
+```
+
+## Expected Headline Metrics
+
+The verification script checks the key values used in `results/presentation/slide.tex`:
+
+```text
+Momentum WSD MAE                  0.037844
+Multi-Power Law WSD MAE           0.036027
+Step spline selected WSD MAE      0.020878
+Final step+event WSD full MAE     0.011191
+Final step+event WSD full R2      0.993410
+Final step+event WSD tail MAE     0.015937
+```
+
+Small floating-point differences are tolerated; large deviations cause `verify_report_metrics.py` to fail.
+
+## Presentation
+
+The final deck is self-contained under:
+
+```text
+results/presentation/
+```
+
+To compile:
+
+```bash
+cd results/presentation
+xelatex slide.tex
+bibtex slide
+xelatex slide.tex
+xelatex slide.tex
 ```

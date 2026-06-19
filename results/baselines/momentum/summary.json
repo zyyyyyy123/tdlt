@@ -1,0 +1,94 @@
+{
+  "model": "L(s) = L0 + A * S1(s)^(-alpha) - C * S2(s)",
+  "fits": [
+    {
+      "sample_end": 33907,
+      "params": {
+        "L0": 2.775526112723155,
+        "A": 1.1022057381030128,
+        "C": 0.18095373448503968,
+        "alpha": 1.0070699792970776
+      },
+      "objective_value": 0.3602291002383924,
+      "metrics": [
+        {
+          "sample_end": 33907,
+          "run": "cosine",
+          "full_run_name": "M:100M_gpt_D:20B_scheduler:cosine_rope",
+          "eval_scope": "sampled_steps_cross_run (no unseen steps)",
+          "n_train_points": 32908,
+          "n_eval_points": 32908,
+          "eval_step_start": 1000,
+          "eval_step_end": 33907,
+          "L0": 2.775526112723155,
+          "A": 1.1022057381030128,
+          "C": 0.18095373448503968,
+          "alpha": 1.0070699792970776,
+          "mae": 0.03222419132155574,
+          "mse": 0.0016249236313709277,
+          "r2": 0.9532008230101131,
+          "endpoint_true": 2.646177291870117,
+          "endpoint_pred": 2.671251230346711,
+          "endpoint_diff": 0.02507393847659367,
+          "endpoint_abs_diff": 0.02507393847659367
+        },
+        {
+          "sample_end": 33907,
+          "run": "wsd",
+          "full_run_name": "M:100M_gpt_D:20B_scheduler:wsd_rope",
+          "eval_scope": "sampled_steps_cross_run",
+          "n_train_points": 0,
+          "n_eval_points": 32908,
+          "eval_step_start": 1000,
+          "eval_step_end": 33907,
+          "L0": 2.775526112723155,
+          "A": 1.1022057381030128,
+          "C": 0.18095373448503968,
+          "alpha": 1.0070699792970776,
+          "mae": 0.03784416144115437,
+          "mse": 0.002245138723499358,
+          "r2": 0.925669143756823,
+          "endpoint_true": 2.6357319355010986,
+          "endpoint_pred": 2.657991995424399,
+          "endpoint_diff": 0.02226005992330027,
+          "endpoint_abs_diff": 0.02226005992330027
+        }
+      ],
+      "matches_reference_code": false
+    }
+  ],
+  "fit_runs": [
+    "cosine"
+  ],
+  "eval_runs": [
+    "cosine",
+    "wsd"
+  ],
+  "data_path": "data/raw/gpt_loss+lrs.pkl",
+  "output_dir": "results/baselines/momentum",
+  "sampling": {
+    "sample_start": 1000,
+    "sample_ends": [
+      33907
+    ],
+    "sample_interval": 1,
+    "auto_sample_end": true
+  },
+  "decay_factor": 0.999,
+  "huber_delta": 0.001,
+  "ema_span": 99,
+  "initialization": {
+    "L0": "np.linspace(0.1, 2.1, 2)",
+    "A": "np.linspace(1, 22, 3)",
+    "C": "np.linspace(1, 22, 3)",
+    "alpha": "np.linspace(0, 0.8, 3)"
+  },
+  "optimizer": {
+    "method": "L-BFGS-B",
+    "bounds": "(0, inf) for L0, A, C, alpha",
+    "maxiter": 100000,
+    "ftol": 1e-09,
+    "gtol": 1e-06,
+    "eps": 1e-08
+  }
+}

@@ -1,8 +1,0 @@
-question,result,key_numbers,interpretation
-main_wsd_margin,supported,full 0.035007->0.029644; tail 0.035694->0.031012,Cosine-trained aligned event leftover strongly improves WSD full/tail over the step reference.
-does_811_training_transfer_to_wsd,not_supported,811-train WSD full step=0.029869; plus=0.030152,Using 811 as training checks whether abrupt-drop geometry can support WSD transfer.
-does_cosine_plus_811_training_help_wsd,supported,cosine+811 train WSD full step=0.031382; plus=0.029322,Two-source training tests whether the leftover survives when 811 is no longer just validation.
-feature_alignment_negative_controls,supported,aligned=0.029644; zero=0.035032; shift=0.035132; reverse=0.038455,Aligned event/tail geometry should beat deliberately misaligned feature controls.
-which_feature_family_drives_gain,supported,best=linear_endpoint:0.029644; second=drop_impulse:0.033357,"Feature ablation checks whether linear endpoint/tail geometry, not generic event features, drives the effect."
-can_endpoint_guard_fix_endpoint_tradeoff,mixed,val_full WSD endpoint=0.031491; guard WSD endpoint=0.031491; guard full MAE=0.029716,Endpoint-constrained validation tests whether full/tail gains can be kept without endpoint degradation.
-within_curve_bootstrap,supported,"full q05=0.003307, prob+=1.000; last2048 q05=0.000563, prob+=1.000",Block bootstrap is within-curve evidence only; it does not prove schedule-level significance.
