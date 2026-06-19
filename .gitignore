@@ -16,3 +16,5 @@ zijun/method_development/outputs/*_predictions.csv
 zijun/method_development/baseline_results/*_predictions.csv
 zijun/method_development/baseline_results/**/predictions.csv
 zijun/method_development/baseline_results/**/*.png
+
+zhanyang/
